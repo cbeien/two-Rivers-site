@@ -86,6 +86,7 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
 <section class="step">
   <h2><span class="n">2</span>Mortgage</h2>
   <div id="mortWarn" class="msg warn hide" role="alert"><b>No usable sale record was found, so we assumed the building is paid off.</b> <span id="mortWarnWhy"></span> If you have a mortgage, enter your payment below.</div>
+  <div id="mortInfo" class="msg hide"></div>
   <div class="row"><label for="pi">Monthly mortgage payment<span class="tag" id="tag-pi"></span><small>Principal and interest only. Enter 0 if it's paid off.</small></label><div class="box"><span>$</span><input id="pi" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
   <div class="row"><label for="loan2">Other loan payments, optional<span class="tag" id="tag-loan2"></span><small>Home equity, renovation, or repair loans used for the building. If you have more than one, add the monthly payments together.</small></label><div class="box"><span>$</span><input id="loan2" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
   <div class="row"><label for="bal">Mortgage balance today, optional<span class="tag" id="tag-bal"></span><small>What you still owe. With the rate, shows an interest-only view.</small></label><div class="box"><span>$</span><input id="bal" inputmode="decimal" autocomplete="off"></div></div>
@@ -213,7 +214,7 @@ const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
 const TAGS={typical:['typical',''],record:['county record','rec'],est:['estimate',''],lookup:['estimate','']};
 function setF(id,v,src){const e=$(id);e.value=v;e.dataset.src=src||'';tag(id)}
 function tag(id){const t=$('tag-'+id);if(!t)return;const s=TAGS[$(id).dataset.src];t.textContent=s?s[0]:'';t.className='tag'+(s&&s[1]?' '+s[1]:'')}
-let R=REPL0.map(r=>r.slice()), lookupAV=0, noSale=false;
+let R=REPL0.map(r=>r.slice()), lookupAV=0, noSale=false, lookupLoan=null;
 
 /* ===== MATH ===== */
 function pmt(P,rate,yrs){const r=rate/100/12,n=yrs*12;if(P<=0||n<=0)return 0;if(r===0)return P/n;return P*r/(1-Math.pow(1+r,-n))}
@@ -254,6 +255,7 @@ function calc(){
  if(lookupAV&&$('tax').dataset.src==='lookup')$('tax').value=lookupTax();
  $('seniorRow').classList.toggle('hide',!(lookupAV&&$('tax').dataset.src==='lookup'&&val('occ')>=1));
  $('mortWarn').classList.toggle('hide',!noSale);
+ drawMortInfo();
  drawLinks();
  const miss=missing();
  R.forEach((r,i)=>{const c=$('rp'+i);if(c)c.textContent=r[2]>0?usd(r[1]/r[2]/12)+'/mo':'—'});
@@ -281,6 +283,14 @@ function calc(){
   ?`<p class="msg">Charging ${usd(c.rA)} already covers the mortgage, taxes, insurance, repairs, savings for every big replacement, emergency and planning funds, a vacancy cushion, and pays you ${usd(val('wage'))} an hour. Market rent would add ${usd(gap)} a month per unit (${usd(gap*12*c.rented)} a year across your ${plural(c.rented,'rented unit')}) on top of every real cost.</p>`
   :`<p class="msg">Rents nearby are at or below what this building needs. Double-check your numbers; your costs may be higher than typical.</p>`);
 }
+function drawMortInfo(){ // estimated loan (from lookup) and this month's interest/principal split
+ const parts=[],L=lookupLoan;
+ if(L)parts.push(`<b>Estimated mortgage: ${usd(L.orig)} at ${L.rt}%.</b> Based on the ${usd(L.price)} sale in ${L.yr} with ${Math.round(DOWN_PAYMENT*100)}% down and the average 30-year rate that year.`);
+ const pi=val('pi'),bal=val('bal'),rate=val('rate');
+ if(has('pi')&&pi>0&&has('bal')&&bal>0&&has('rate')){
+  const int=Math.min(pi,bal*rate/1200);
+  parts.push(`Of your ${usd(pi)} monthly payment, about <b>${usd(int)} is interest</b> and ${usd(pi-int)} pays down the ${usd(bal)} you still owe.`)}
+ $('mortInfo').innerHTML=parts.join('<br>');$('mortInfo').classList.toggle('hide',!parts.length)}
 function drawRepl(){
  $('rt').innerHTML=R.map((r,i)=>`<tr><td>${r[0]}</td><td class="num"><div class="box"><span>$</span><input inputmode="decimal" value="${r[1]}" data-i="${i}" data-k="1" aria-label="${r[0]} cost"></div></td><td class="num"><div class="box" style="max-width:100px"><input inputmode="numeric" value="${r[2]}" data-i="${i}" data-k="2" aria-label="${r[0]} years it lasts"><span>yrs</span></div></td><td class="num" id="rp${i}"></td></tr>`).join('');
  $('rt').querySelectorAll('input').forEach(e=>e.addEventListener('input',()=>{const v=parse(e.value);R[e.dataset.i][e.dataset.k]=isFinite(v)&&v>=0?v:0;calc()}));
@@ -297,7 +307,7 @@ function drawLinks(){
   .map(([n,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">Search ${n} &#8599;</a>`).join('')}
 function reset(){
  ALL.forEach(id=>setF(id,TYPICAL[id]??'',TYPICAL[id]!==undefined?'typical':''));
- R=REPL0.map(r=>r.slice());drawRepl();lookupAV=0;noSale=false;$('senior').checked=false;
+ R=REPL0.map(r=>r.slice());drawRepl();lookupAV=0;noSale=false;lookupLoan=null;$('senior').checked=false;
  ['addr','mkt','cz_zip'].forEach(id=>$(id).value='');$('lmsg').innerHTML='';calc()}
 
 /* ===== EVENTS ===== */
@@ -344,7 +354,7 @@ $('go').onclick=async()=>{
    const yrs=Object.keys(RATES).map(Number),rt=RATES[yr]??RATES[yr<Math.min(...yrs)?Math.min(...yrs):Math.max(...yrs)];
    const orig=Math.round(price*(1-DOWN_PAYMENT)),months=Math.max(0,Math.round((Date.now()-d)/(864e5*30.4375)));
    if(months>=360){noSale=true;setF('pi',0,'est');$('mortWarnWhy').textContent=`The last sale was in ${yr}, more than 30 years ago, so a 30-year mortgage from then would be paid off.`}
-   else{setF('pi',Math.round(pmt(orig,rt,30)),'est');setF('bal',Math.round(balanceAfter(orig,rt,30,months)),'est');setF('rate',rt,'est');
+   else{lookupLoan={orig,price,yr,rt};setF('pi',Math.round(pmt(orig,rt,30)),'est');setF('bal',Math.round(balanceAfter(orig,rt,30,months)),'est');setF('rate',rt,'est');
     out.push(`Mortgage estimated from the ${usd(price)} sale in ${yr} (${Math.round(DOWN_PAYMENT*100)}% down, ${rt}% rate).`)}
   } else {noSale=true;setF('pi',0,'est');$('mortWarnWhy').textContent='Cook County has no recent market sale on file (for example, it was inherited or transferred within a family).'}
   setF('ins',2000,'est');
