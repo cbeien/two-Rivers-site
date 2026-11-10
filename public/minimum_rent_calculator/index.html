@@ -94,6 +94,7 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
   <div class="row"><label for="mi">Mortgage insurance, if any<span class="tag" id="tag-mi"></span><small>PMI, or MIP on an FHA loan. Usually charged when the down payment was under 20%.</small></label><div class="box"><span>$</span><input id="mi" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
   <div id="pitiTotal" class="msg hide"></div>
   <div class="row"><label for="loan2">Other loan payments, if any<span class="tag" id="tag-loan2"></span><small>Home equity, renovation, or repair loans used for the building. Add them together if you have more than one.</small></label><div class="box"><span>$</span><input id="loan2" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="hoa">HOA or condo dues, if any<span class="tag" id="tag-hoa"></span><small>Most 2-flats have none. Usually paid separately from the mortgage.</small></label><div class="box"><span>$</span><input id="hoa" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
   <div class="row"><label for="bal">Mortgage balance today, optional<span class="tag" id="tag-bal"></span><small>What you still owe. With the rate, shows how much of your payment is interest.</small></label><div class="box"><span>$</span><input id="bal" inputmode="decimal" autocomplete="off"></div></div>
   <div class="row"><label for="rate">Interest rate, optional<span class="tag" id="tag-rate"></span></label><div class="box"><input id="rate" inputmode="decimal" autocomplete="off"><span>%</span></div></div>
   <div id="mortInfo" class="msg hide"></div>
@@ -200,7 +201,7 @@ const SAMPLES=[
  {n:'2-flat bought 2023',v:{units:2,occ:1,pi:2480,bal:370000,rate:6.8,tax:6200,ins:2400}},
  {n:'3-flat, owner in one',v:{units:3,occ:1,pi:2650,bal:410000,rate:6.5,tax:7000,ins:3000}},
  {n:'2-flat, paid off',v:{units:2,occ:1,pi:0,tax:4800,ins:1900}}];
-const ALL=['units','occ','pi','tax','ins','mi','loan2','bal','rate',...Object.keys(TYPICAL)];
+const ALL=['units','occ','pi','tax','ins','mi','loan2','hoa','bal','rate',...Object.keys(TYPICAL)];
 
 /* ===== HELPERS ===== */
 const $=id=>document.getElementById(id);
@@ -234,7 +235,7 @@ function compute(mult){ // mult: optional {i,f} to scale one replacement cost
  const piInt=(has('bal')&&has('rate'))?Math.min(pi,val('bal')*val('rate')/1200):null;
  const resYear=R.map((r,i)=>{const c=(mult&&mult.i==i)?r[1]*mult.f:r[1];return r[2]>0?c/r[2]:0});
  const m={ // whole-building monthly costs
-  taxes:val('tax')/12, ins:val('ins')/12, utilities:val('heat')+val('water')+val('elec')+val('garb'),
+  taxes:val('tax')/12, ins:val('ins')/12, hoa:val('hoa'), utilities:val('heat')+val('water')+val('elec')+val('garb'),
   upkeep:(val('minor')+val('snow'))/12, repl:resYear.reduce((a,b)=>a+b,0)/12,
   pay:val('hours')*val('wage'), funds:val('emerg')+val('plan')+val('legal')/12};
  const base=Object.values(m).reduce((a,b)=>a+b,0);
@@ -244,7 +245,7 @@ function compute(mult){ // mult: optional {i,f} to scale one replacement cost
  const rent=mort=>per(base+mort+loan2)/(1-loss);    // rented share, split across rented units, plus cushion
  const rA=rent(pi);
  return {units,occ,rented,share,total,pi,piInt,m,resYear,loss,rA,rB:piInt===null?null:rent(piInt),per,
-  lines:[['Principal and interest',per(pi)],['Property taxes',per(m.taxes)],['Homeowners insurance',per(m.ins)],...(mi>0?[['Mortgage insurance',per(mi)]]:[]),...(loan2-mi>0?[['Other loans',per(loan2-mi)]]:[]),['Utilities',per(m.utilities)],['Routine repairs and yard',per(m.upkeep)],
+  lines:[['Principal and interest',per(pi)],['Property taxes',per(m.taxes)],['Homeowners insurance',per(m.ins)],...(mi>0?[['Mortgage insurance',per(mi)]]:[]),...(loan2-mi>0?[['Other loans',per(loan2-mi)]]:[]),...(m.hoa>0?[['HOA or condo dues',per(m.hoa)]]:[]),['Utilities',per(m.utilities)],['Routine repairs and yard',per(m.upkeep)],
    ['Savings for big replacements',per(m.repl)],['Your pay',per(m.pay)],['Emergency, planning, legal',per(m.funds)],['Vacancy and unpaid-rent cushion',rA*loss]]};
 }
 
