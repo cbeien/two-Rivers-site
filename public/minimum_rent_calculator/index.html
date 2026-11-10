@@ -43,6 +43,14 @@ button.tag[aria-expanded=true]{background:var(--soft)}
 .sw input:focus-visible+span{outline:3px solid var(--acc2);outline-offset:2px}
 .row.ut.off .box{opacity:.4}
 .row.ut.off select{display:none}
+.lc{margin:10px 0 4px;padding:14px;border-radius:10px;background:var(--soft)}
+.lc-head{display:flex;justify-content:space-between;align-items:center}
+.lc-note{margin:4px 0 10px;font-size:14px;color:var(--mute)}
+.lc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.lc-grid label{font-size:14px;font-weight:600;display:flex;flex-direction:column;gap:4px}
+.lc-grid .box{background:var(--card)}
+.lc-grid select,.lc-grid input[type=month]{font:inherit;font-size:16px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
+.lc-out{margin-top:12px;font-size:15px}
 .lk{margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .lk-head{display:flex;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
 .lk-head svg{color:var(--acc);flex:none}
@@ -134,6 +142,18 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
   <div class="row"><label for="hoa">HOA or condo dues, if any<button type="button" class="tag" id="tag-hoa" aria-expanded="false"></button><small>Most 2-flats have none. Usually paid separately from the mortgage.</small></label><div class="box"><span>$</span><input id="hoa" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
   <div class="row"><label for="bal">Mortgage balance today<button type="button" class="tag" id="tag-bal" aria-expanded="false"></button><small>What you still owe on the mortgage. Skip if it's paid off.</small></label><div class="box"><span>$</span><input id="bal" inputmode="decimal" autocomplete="off"></div></div>
   <div class="row"><label for="rate">Interest rate<button type="button" class="tag" id="tag-rate" aria-expanded="false"></button><small>Skip if it's paid off.</small></label><div class="box"><input id="rate" inputmode="decimal" autocomplete="off"><span>%</span></div></div>
+  <p style="margin:6px 0 0"><button type="button" class="linkish" id="openLC">Work out your payment and balance from your loan</button></p>
+  <div id="loanCalc" class="lc hide">
+    <div class="lc-head"><b>Your loan</b><button type="button" class="linkish" id="closeLC">Close</button></div>
+    <p id="lcNote" class="lc-note">Enter the details from your loan papers or mortgage statement. The payment, balance and rate above update as you type.</p>
+    <div class="lc-grid">
+      <label>Original loan amount<div class="box"><span>$</span><input id="lc_amt" inputmode="decimal" autocomplete="off"></div></label>
+      <label>Interest rate<div class="box"><input id="lc_rate" inputmode="decimal" autocomplete="off"><span>%</span></div></label>
+      <label>Loan term<select id="lc_term"><option value="30">30 years</option><option value="20">20 years</option><option value="15">15 years</option><option value="10">10 years</option></select></label>
+      <label>First payment<input id="lc_start" type="month"></label>
+    </div>
+    <div id="lcOut" class="lc-out"></div>
+  </div>
   <div id="mortInfo" class="msg hide"></div>
 </section>
 
@@ -267,7 +287,7 @@ const parse=s=>{const v=parseFloat(String(s).replace(/[$,%\s]/g,''));return isFi
 const has=id=>String($(id).value).trim()!==''&&!isNaN(parse($(id).value));
 const val=id=>{const v=parse($(id).value);return isFinite(v)&&v>=0?v:0};
 const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
-const TAGS={typical:['typical',''],record:['county record','rec'],est:['estimate',''],lookup:['estimate','']};
+const TAGS={typical:['typical',''],record:['county record','rec'],est:['estimate',''],calc:['from your loan',''],lookup:['estimate','']};
 const EXPL={};
 function setF(id,v,src,ex){const e=$(id);e.value=v;e.dataset.src=src||'';if(ex)EXPL[id]=ex;else delete EXPL[id];closeEx(id);tag(id)}
 function exText(id){const e=EXPL[id];if(e)return typeof e==='function'?e():e;
@@ -356,9 +376,21 @@ function calc(){
   ?`<p class="msg">Charging ${usd(c.rA)} already covers the mortgage, taxes, insurance, repairs, savings for every big replacement, an emergency and planning fund, savings for vacancies, and pays you ${usd(val('wage'))} an hour. Market rent would add ${usd(gap)} a month per unit (${usd(gap*12*c.rented)} a year across your ${plural(c.rented,'rented unit')}) on top of every real cost.</p>`
   :`<p class="msg">Rents nearby are at or below what this building needs. Double-check your numbers; your costs may be higher than typical.</p>`);
 }
-function drawMortInfo(){ // estimated loan (from lookup) and this month's interest/principal split
- const parts=[],L=lookupLoan;
- if(L)parts.push(`<b>Estimated mortgage: ${usd(L.orig)} at ${L.rt}%.</b> Based on the ${usd(L.price)} sale in ${L.yr} with ${Math.round(DOWN_PAYMENT*100)}% down and the average 30-year rate that year.`);
+/* Loan calculator: original loan, rate, term, first payment -> monthly payment and balance today. */
+function openLC(){$('loanCalc').classList.remove('hide');$('openLC').parentElement.classList.add('hide')}
+function closeLC(){$('loanCalc').classList.add('hide');$('openLC').parentElement.classList.remove('hide')}
+function runLC(){
+ const amt=parse($('lc_amt').value),rate=parse($('lc_rate').value),term=+$('lc_term').value,st=$('lc_start').value;
+ if(!(amt>0)||!(rate>=0)||!st){$('lcOut').textContent='Fill in all four to see your payment and balance.';return}
+ const [y,mo]=st.split('-').map(Number),now=new Date();
+ const made=Math.max(0,Math.min(term*12,(now.getFullYear()-y)*12+(now.getMonth()+1-mo)+1)); // payments made so far
+ const pay=Math.round(pmt(amt,rate,term)),bal=Math.round(balanceAfter(amt,rate,term,made));
+ const ex='Worked out from your loan details. Click to see or change them.';
+ setF('pi',made>=term*12?0:pay,'calc',ex);setF('bal',bal,'calc',ex);setF('rate',rate,'calc',ex);noSale=false;
+ $('lcOut').innerHTML=made>=term*12?'<b>This loan is paid off.</b>':`Monthly principal and interest: <b>${usd(pay)}</b> &middot; Still owed after ${made} payments: <b>${usd(bal)}</b>`;
+ calc()}
+function drawMortInfo(){ // this month's interest/principal split
+ const parts=[];
  const pi=val('pi'),bal=val('bal'),rate=val('rate');
  if(has('pi')&&pi>0&&has('bal')&&bal>0&&has('rate')){
   const int=Math.min(pi,bal*rate/1200);
@@ -385,16 +417,22 @@ function reset(){
  $('vac_every').value=VAC_DEFAULT.every;$('vac_gap').value=VAC_DEFAULT.gap;
  UTIL.forEach(id=>{$('tp-'+id).checked=!!UT_DEFAULT[id];$('sh-'+id).value='all'});syncUtil();
  ALL.forEach(id=>setF(id,TYPICAL[id]??'',TYPICAL[id]!==undefined?'typical':''));
- R=REPL0.map(r=>r.slice());drawRepl();lookupAV=0;noSale=false;lookupLoan=null;$('senior').checked=false;
+ R=REPL0.map(r=>r.slice());drawRepl();lookupAV=0;noSale=false;lookupLoan=null;
+ ['lc_amt','lc_rate','lc_start'].forEach(id=>$(id).value='');$('lc_term').value='30';$('lcOut').textContent='';closeLC();$('senior').checked=false;
  ['addr','mkt','cz_zip'].forEach(id=>$(id).value='');$('lmsg').innerHTML='';calc()}
 
 /* ===== EVENTS ===== */
+$('openLC').onclick=()=>{openLC();$('lcNote').textContent='Enter the details from your loan papers or mortgage statement. The payment, balance and rate above update as you type.';runLC()};
+$('closeLC').onclick=closeLC;
+['lc_amt','lc_rate','lc_term','lc_start'].forEach(id=>$(id).addEventListener('input',runLC));
 function syncUtil(){UTIL.forEach(id=>{const off=$('tp-'+id).checked;$(id).closest('.row').classList.toggle('off',off);$(id).disabled=off})}
 UTIL.forEach(id=>{['tp-','sh-'].forEach(pf=>$(pf+id).addEventListener('input',()=>{syncUtil();calc()}))});
 // the shared/rented-only choice only matters when the owner lives in the building
 function syncShareSel(){const own=val('occ')>=1;UTIL.forEach(id=>$('sh-'+id).classList.toggle('hide',!own))}
 ALL.forEach(id=>{const row=$(id).closest('.row'),x=document.createElement('div');x.className='expl hide';x.id='ex-'+id;x.setAttribute('role','note');row.after(x);
- $('tag-'+id).addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const open=x.classList.contains('hide');
+ $('tag-'+id).addEventListener('click',e=>{e.preventDefault();e.stopPropagation();
+  if($(id).dataset.src==='calc'){openLC();$('loanCalc').scrollIntoView({behavior:'smooth',block:'center'});return}
+  const open=x.classList.contains('hide');
   if(open){x.innerHTML=exText(id);x.classList.remove('hide')}else x.classList.add('hide');$('tag-'+id).setAttribute('aria-expanded',open)})});
 ALL.forEach(id=>$(id).addEventListener('input',()=>{$(id).dataset.src='';delete EXPL[id];closeEx(id);tag(id);if(id==='pi')noSale=false;calc()}));
 ['vac_every','vac_gap','mkt','cz_zip','cz_beds','cz_park','cz_laundry','cz_ac','senior','wi','wm'].forEach(id=>$(id).addEventListener('input',calc));
@@ -474,9 +512,10 @@ $('go').onclick=async()=>{
   const pay=Math.round(pmt(orig,rt,30)),bal=Math.round(balanceAfter(orig,rt,30,months));
   const dt=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
   lookupLoan={orig,price,yr,rt};
-  setF('pi',pay,'est',`<b>Sale price</b> ${usd(price)} (${dt})<br>&minus; ${Math.round(DOWN_PAYMENT*100)}% assumed down payment = ${usd(orig)} loan<br>30-year fixed loan at ${rt}% (Freddie Mac's ${yr} average) = <b>${usd(pay)} a month</b> principal and interest.<br>If you refinanced or put down a different amount, use your real payment.`);
-  setF('bal',bal,'est',`${usd(orig)} loan at ${rt}%, after ${months} monthly payments since ${dt}, leaves about <b>${usd(bal)}</b> still owed.`);
-  setF('rate',rt,'est',`Freddie Mac's average 30-year fixed rate in ${yr}, the year of the last sale. If you refinanced, use your current rate.`);
+  $('lc_amt').value=orig;$('lc_rate').value=rt;$('lc_term').value='30';
+  {const f=new Date(d.getFullYear(),d.getMonth()+1,1);$('lc_start').value=`${f.getFullYear()}-${String(f.getMonth()+1).padStart(2,'0')}`}
+  openLC();$('lcNote').innerHTML=`Estimated from the ${usd(price)} sale in ${dt}: ${Math.round(DOWN_PAYMENT*100)}% down and Freddie Mac's ${yr} average rate. <b>Replace these with the numbers from your loan papers or mortgage statement.</b>`;
+  runLC();
   lkStep('mort','done',`${usd(orig)} at ${rt}% &middot; estimated from the ${usd(price)} sale in ${yr}`);
  }).catch(()=>lkStep('mort','warn','Could not load; enter your mortgage below.'));
 
