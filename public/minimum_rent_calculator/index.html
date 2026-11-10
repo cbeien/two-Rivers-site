@@ -333,14 +333,14 @@ function calc(){
   $('answer').classList.add('hide');$('missing').classList.remove('hide');
   $('missing').innerHTML='To see your minimum rent, fill in: '+miss.map(x=>`<b>${x}</b>`).join(', ')+'.';
   $('mktOut').innerHTML='';$('wiOut').textContent='Fill in steps 1 and 2 first.';
-  $('vacOut').textContent=`A unit sitting empty ${Math.round(vacFrac()*100)}% of the time. We'll show how much to set aside once steps 1 and 2 are filled in.`;return}
+  $('vacOut').textContent=`Fill in steps 1 and 2 to see how much to set aside.`;return}
  $('missing').classList.add('hide');$('answer').classList.remove('hide');
  const c=compute();
  $('outA').textContent=usd(c.rA);
  {const every=+$('vac_every').value,gap=+$('vac_gap').value,set=c.rA*c.vacF,yrs=every/12,gapTxt=gap===0.5?'2 weeks':plural(gap,'month');
-  $('vacOut').innerHTML=`Set aside <b>${usd(set)} a month</b> per rented unit. Over ${yrs===1?'a year':yrs+' years'} that adds up to ${usd(set*every)}, enough to cover ${gapTxt} of lost rent between tenants. That's a unit sitting empty about ${Math.round(c.vacF*100)}% of the time.`}
+  $('vacOut').innerHTML=`Set aside <b>${usd(set)} a month</b> per rented unit. Over ${yrs===1?'a year':yrs+' years'} that adds up to ${usd(set*every)}, enough to cover ${gapTxt} of lost rent between tenants.`}
  $('shareLine').innerHTML=c.occ>0
-  ?`Your building costs <b>${usd(c.total)}</b> a month to run. Your ${plural(c.rented,'rented unit')} ${c.rented===1?'covers':'cover'} ${usd(c.rentedTotal)} of that (${c.rented} of ${c.units} shares of shared costs, plus any utilities charged to rented units only). The ${plural(c.occ,'unit')} you live in ${c.occ===1?'carries':'carry'} the other ${usd(c.total-c.rentedTotal)}, as your own housing cost.`
+  ?`Your building costs <b>${usd(c.total)}</b> a month to run. Your ${plural(c.rented,'rented unit')} ${c.rented===1?'covers':'cover'} ${usd(c.rentedTotal)} of that. The other ${usd(c.total-c.rentedTotal)} is your own housing cost for the ${plural(c.occ,'unit')} you live in.`
   :`Your building costs <b>${usd(c.total)}</b> a month to run, split across ${plural(c.rented,'rented unit')}.`;
  $('receipt').innerHTML=c.lines.map(([n,v])=>`<tr><td>${n}</td><td class="num">${usd(v)}</td></tr>`).join('')+`<tr class="total"><td>Minimum rent per unit</td><td class="num">${usd(c.rA)}</td></tr>`;
  const mt=c.lines.filter(l=>/^(Principal|Property taxes|Homeowners|Mortgage insurance|Other loans)/.test(l[0])).reduce((a,l)=>a+l[1],0);
