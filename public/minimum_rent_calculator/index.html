@@ -27,6 +27,43 @@ h1{font-size:clamp(26px,4vw,34px);margin:0 0 6px;line-height:1.2}
 .box input{border:0;outline:0;background:transparent;color:var(--ink);font:inherit;padding:8px;width:100%;min-width:0;text-align:right}
 .tag{display:inline-block;font-size:12px;font-weight:400;border:1px solid var(--line);border-radius:10px;padding:0 7px;margin-left:6px;color:var(--mute)}
 .tag:empty{display:none}
+button.tag{font:inherit;font-size:12px;cursor:pointer;background:transparent;line-height:1.6}
+button.tag:hover{background:var(--soft)}
+button.tag[aria-expanded=true]{background:var(--soft)}
+.expl{margin:-2px 0 10px;padding:10px 12px;border-radius:8px;background:var(--soft);font-size:14px;line-height:1.5}
+.expl b{font-weight:600}
+.utc{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:6px;font-weight:400;font-size:14px}
+.utc select{font:inherit;font-size:14px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);max-width:100%}
+.sw{display:inline-flex;align-items:center;gap:8px;cursor:pointer;color:var(--ink);font-weight:400!important}
+.sw input{position:absolute;opacity:0;width:1px;height:1px}
+.sw span{width:36px;height:20px;border-radius:10px;background:var(--line);position:relative;transition:background .15s;flex:none}
+.sw span::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+.sw input:checked+span{background:var(--acc)}
+.sw input:checked+span::after{transform:translateX(16px)}
+.sw input:focus-visible+span{outline:3px solid var(--acc2);outline-offset:2px}
+.row.ut.off .box{opacity:.4}
+.row.ut.off select{display:none}
+.lk{margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.lk-head{display:flex;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.lk-head svg{color:var(--acc);flex:none}
+.lk-head b{display:block;font-size:16px}.lk-head span{font-size:13px;color:var(--mute)}
+.lk-steps{list-style:none;margin:0;padding:4px 0}
+.lk-steps li{display:grid;grid-template-columns:36px 1fr 22px;gap:10px;align-items:center;padding:8px 14px}
+.lk-steps .ic{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;background:var(--soft);color:var(--acc)}
+.lk-steps b{display:block;font-size:15px}.lk-steps .d{font-size:14px;color:var(--mute)}
+.lk-steps .st{width:20px;height:20px;border-radius:50%}
+.lk-steps li.pending .st{border:2px solid var(--line);border-top-color:var(--acc);animation:spin .8s linear infinite}
+.lk-steps li.done .st{background:var(--acc);-webkit-mask:var(--chk) center/14px no-repeat,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude}
+.lk-steps li.warn .st{background:var(--acc2)}
+.lk-steps li.warn .ic{color:var(--acc2)}
+.lk-steps li.done .st::after,.lk-steps li.warn .st::after{display:block;text-align:center;color:#fff;font-size:13px;font-weight:700;line-height:20px}
+.lk-steps li.done .st{-webkit-mask:none;mask:none}
+.lk-steps li.done .st::after{content:"\2713"}
+.lk-steps li.warn .st::after{content:"!"}
+@media(prefers-color-scheme:dark){.lk-steps li.done .st::after,.lk-steps li.warn .st::after{color:#0b1210}}
+.lk-foot{margin:0;padding:10px 14px;border-top:1px solid var(--line);font-size:13px;color:var(--mute)}
+.lk-err{margin-top:10px;padding:12px 14px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:15px}
+@keyframes spin{to{transform:rotate(360deg)}}
 .tag.rec{border-color:var(--acc);color:var(--acc)}
 @media(max-width:560px){.row{grid-template-columns:1fr}}
 button,.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 16px;border-radius:8px;cursor:pointer;text-decoration:none;display:inline-block}
@@ -78,8 +115,8 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
     <div id="lmsg"></div>
     <div style="margin-top:6px;font-size:15px">Or try a hypothetical example: <span id="samples"></span></div>
   </div>
-  <div class="row"><label for="units">Units in the building<span class="tag" id="tag-units"></span><small>1 to 6</small></label><div class="box"><input id="units" inputmode="numeric" autocomplete="off"><span>units</span></div></div>
-  <div class="row"><label for="occ">Units you live in<span class="tag" id="tag-occ"></span><small>0 if you don't live there. Your own unit doesn't need to earn rent.</small></label><div class="box"><input id="occ" inputmode="numeric" autocomplete="off"><span>units</span></div></div>
+  <div class="row"><label for="units">Units in the building<button type="button" class="tag" id="tag-units" aria-expanded="false"></button><small>1 to 6</small></label><div class="box"><input id="units" inputmode="numeric" autocomplete="off"><span>units</span></div></div>
+  <div class="row"><label for="occ">Units you live in<button type="button" class="tag" id="tag-occ" aria-expanded="false"></button><small>0 if you don't live there. Your own unit doesn't need to earn rent.</small></label><div class="box"><input id="occ" inputmode="numeric" autocomplete="off"><span>units</span></div></div>
 </section>
 
 <!-- STEP 2 -->
@@ -87,34 +124,50 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
   <h2><span class="n">2</span>Estimated financing costs</h2>
   <p class="hint">What most owners think of as their "mortgage payment": the loan, plus the taxes and insurance usually paid through it.</p>
   <div id="mortWarn" class="msg warn hide" role="alert"><b>No usable sale record was found, so we assumed the building is paid off.</b> <span id="mortWarnWhy"></span> If you have a mortgage, enter principal and interest below.</div>
-  <div class="row"><label for="pi">Principal and interest<span class="tag" id="tag-pi"></span><small>The loan part of your payment. Enter 0 if it's paid off.</small></label><div class="box"><span>$</span><input id="pi" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
-  <div class="row"><label for="tax">Property taxes<span class="tag" id="tag-tax"></span><small>The yearly total from your tax bill.</small></label><div class="box"><span>$</span><input id="tax" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
+  <div class="row"><label for="pi">Principal and interest<button type="button" class="tag" id="tag-pi" aria-expanded="false"></button><small>The loan part of your payment. Enter 0 if it's paid off.</small></label><div class="box"><span>$</span><input id="pi" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="tax">Property taxes<button type="button" class="tag" id="tag-tax" aria-expanded="false"></button><small>The yearly total from your tax bill.</small></label><div class="box"><span>$</span><input id="tax" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
   <div class="row hide" id="seniorRow"><label class="chk" style="font-weight:400"><input type="checkbox" id="senior"> I'm 65 or older (adds the senior exemption to the tax estimate)</label></div>
-  <div class="row"><label for="ins">Homeowners insurance<span class="tag" id="tag-ins"></span><small>The yearly premium. A rough guess is fine.</small></label><div class="box"><span>$</span><input id="ins" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
-  <div class="row"><label for="mi">Mortgage insurance, if any<span class="tag" id="tag-mi"></span><small>PMI, or MIP on an FHA loan. Usually charged when the down payment was under 20%.</small></label><div class="box"><span>$</span><input id="mi" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="ins">Homeowners insurance<button type="button" class="tag" id="tag-ins" aria-expanded="false"></button><small>The yearly premium. A rough guess is fine.</small></label><div class="box"><span>$</span><input id="ins" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
+  <div class="row"><label for="mi">Mortgage insurance, if any<button type="button" class="tag" id="tag-mi" aria-expanded="false"></button><small>PMI, or MIP on an FHA loan. Usually charged when the down payment was under 20%.</small></label><div class="box"><span>$</span><input id="mi" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
   <div id="pitiTotal" class="msg hide"></div>
-  <div class="row"><label for="loan2">Other loan payments, if any<span class="tag" id="tag-loan2"></span><small>Home equity, renovation, or repair loans used for the building. Add them together if you have more than one.</small></label><div class="box"><span>$</span><input id="loan2" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
-  <div class="row"><label for="hoa">HOA or condo dues, if any<span class="tag" id="tag-hoa"></span><small>Most 2-flats have none. Usually paid separately from the mortgage.</small></label><div class="box"><span>$</span><input id="hoa" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
-  <div class="row"><label for="bal">Mortgage balance today, optional<span class="tag" id="tag-bal"></span><small>What you still owe. With the rate, shows how much of your payment is interest.</small></label><div class="box"><span>$</span><input id="bal" inputmode="decimal" autocomplete="off"></div></div>
-  <div class="row"><label for="rate">Interest rate, optional<span class="tag" id="tag-rate"></span></label><div class="box"><input id="rate" inputmode="decimal" autocomplete="off"><span>%</span></div></div>
+  <div class="row"><label for="loan2">Other loan payments, if any<button type="button" class="tag" id="tag-loan2" aria-expanded="false"></button><small>Home equity, renovation, or repair loans used for the building. Add them together if you have more than one.</small></label><div class="box"><span>$</span><input id="loan2" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="hoa">HOA or condo dues, if any<button type="button" class="tag" id="tag-hoa" aria-expanded="false"></button><small>Most 2-flats have none. Usually paid separately from the mortgage.</small></label><div class="box"><span>$</span><input id="hoa" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="bal">Mortgage balance today<button type="button" class="tag" id="tag-bal" aria-expanded="false"></button><small>What you still owe on the mortgage. Skip if it's paid off.</small></label><div class="box"><span>$</span><input id="bal" inputmode="decimal" autocomplete="off"></div></div>
+  <div class="row"><label for="rate">Interest rate<button type="button" class="tag" id="tag-rate" aria-expanded="false"></button><small>Skip if it's paid off.</small></label><div class="box"><input id="rate" inputmode="decimal" autocomplete="off"><span>%</span></div></div>
   <div id="mortInfo" class="msg hide"></div>
 </section>
 
 <!-- STEP 4 -->
 <section class="step">
-  <h2><span class="n">3</span>Utilities you pay</h2>
-  <p class="hint">Only what you pay as the owner, not what tenants pay. Typical amounts are filled in.</p>
-  <div class="row"><label for="heat">Heat<span class="tag" id="tag-heat"></span></label><div class="box"><span>$</span><input id="heat" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
-  <div class="row"><label for="water">Water and sewer<span class="tag" id="tag-water"></span></label><div class="box"><span>$</span><input id="water" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
-  <div class="row"><label for="elec">Common-area electric<span class="tag" id="tag-elec"></span></label><div class="box"><span>$</span><input id="elec" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
-  <div class="row"><label for="garb">Garbage<span class="tag" id="tag-garb"></span></label><div class="box"><span>$</span><input id="garb" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <h2><span class="n">3</span>Utilities</h2>
+  <p class="hint">Turn on <b>Tenant pays directly</b> for anything tenants pay themselves. For the rest, choose who shares the cost: the whole building including your unit (like one boiler heating every floor), or only the rented units.</p>
+  <div class="row ut" data-ut="heat"><div><label for="heat">Heat<button type="button" class="tag" id="tag-heat" aria-expanded="false"></button></label>
+   <div class="utc"><label class="sw"><input type="checkbox" id="tp-heat"><span aria-hidden="true"></span>Tenant pays directly</label>
+   <select id="sh-heat" aria-label="Who shares the heat cost"><option value="all">Shared by all units, including yours</option><option value="rented">Rented units only</option></select></div></div>
+   <div class="box"><span>$</span><input id="heat" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row ut" data-ut="water"><div><label for="water">Water and sewer<button type="button" class="tag" id="tag-water" aria-expanded="false"></button><small>Chicago bills the owner for water.</small></label>
+   <div class="utc"><label class="sw"><input type="checkbox" id="tp-water"><span aria-hidden="true"></span>Tenant pays directly</label>
+   <select id="sh-water" aria-label="Who shares the water and sewer cost"><option value="all">Shared by all units, including yours</option><option value="rented">Rented units only</option></select></div></div>
+   <div class="box"><span>$</span><input id="water" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row ut" data-ut="elec"><div><label for="elec">Common-area electric<button type="button" class="tag" id="tag-elec" aria-expanded="false"></button><small>Hallways, basement, outdoor lights.</small></label>
+   <div class="utc"><label class="sw"><input type="checkbox" id="tp-elec"><span aria-hidden="true"></span>Tenant pays directly</label>
+   <select id="sh-elec" aria-label="Who shares the common-area electric cost"><option value="all">Shared by all units, including yours</option><option value="rented">Rented units only</option></select></div></div>
+   <div class="box"><span>$</span><input id="elec" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row ut" data-ut="garb"><div><label for="garb">Garbage<button type="button" class="tag" id="tag-garb" aria-expanded="false"></button></label>
+   <div class="utc"><label class="sw"><input type="checkbox" id="tp-garb"><span aria-hidden="true"></span>Tenant pays directly</label>
+   <select id="sh-garb" aria-label="Who shares the garbage cost"><option value="all">Shared by all units, including yours</option><option value="rented">Rented units only</option></select></div></div>
+   <div class="box"><span>$</span><input id="garb" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row ut" data-ut="net"><div><label for="net">Internet<button type="button" class="tag" id="tag-net" aria-expanded="false"></button></label>
+   <div class="utc"><label class="sw"><input type="checkbox" id="tp-net"><span aria-hidden="true"></span>Tenant pays directly</label>
+   <select id="sh-net" aria-label="Who shares the internet cost"><option value="all">Shared by all units, including yours</option><option value="rented">Rented units only</option></select></div></div>
+   <div class="box"><span>$</span><input id="net" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
 </section>
 
 <!-- STEP 5 -->
 <section class="step">
   <h2><span class="n">4</span>Repairs and replacements</h2>
-  <div class="row"><label for="minor">Routine repairs<span class="tag" id="tag-minor"></span><small>Leaky faucets, broken locks, small fixes.</small></label><div class="box"><span>$</span><input id="minor" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
-  <div class="row"><label for="snow">Snow and yard care<span class="tag" id="tag-snow"></span></label><div class="box"><span>$</span><input id="snow" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
+  <div class="row"><label for="minor">Routine repairs<button type="button" class="tag" id="tag-minor" aria-expanded="false"></button><small>Leaky faucets, broken locks, small fixes.</small></label><div class="box"><span>$</span><input id="minor" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
+  <div class="row"><label for="snow">Snow and yard care<button type="button" class="tag" id="tag-snow" aria-expanded="false"></button></label><div class="box"><span>$</span><input id="snow" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
   <p class="hint" style="margin:14px 0 4px"><b>Big replacements.</b> Set money aside each month so the roof or furnace is paid for when it goes. Cost divided by years it lasts.</p>
   <table class="rt"><thead><tr><th>Item</th><th class="num">Cost</th><th class="num">Lasts</th><th class="num">Per month</th></tr></thead><tbody id="rt"></tbody></table>
 </section>
@@ -122,13 +175,13 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
 <!-- STEP 6 -->
 <section class="step">
   <h2><span class="n">5</span>Your time and savings</h2>
-  <div class="row"><label for="hours">Hours you spend managing<span class="tag" id="tag-hours"></span><small>Showings, repairs, paperwork, rent collection.</small></label><div class="box"><input id="hours" inputmode="decimal" autocomplete="off"><span>hrs/mo</span></div></div>
-  <div class="row"><label for="wage">Your pay for that time<span class="tag" id="tag-wage"></span><small>Pay yourself what your time is worth.</small></label><div class="box"><span>$</span><input id="wage" inputmode="decimal" autocomplete="off"><span>/hr</span></div></div>
-  <div class="row"><label for="emerg">Emergency fund<span class="tag" id="tag-emerg"></span></label><div class="box"><span>$</span><input id="emerg" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
-  <div class="row"><label for="plan">Planning fund<span class="tag" id="tag-plan"></span><small>Future upgrades and surprises.</small></label><div class="box"><span>$</span><input id="plan" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
-  <div class="row"><label for="legal">Legal, accounting, licenses<span class="tag" id="tag-legal"></span></label><div class="box"><span>$</span><input id="legal" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
-  <div class="row"><label for="vac">Vacancy and turnover<span class="tag" id="tag-vac"></span><small>Share of the year a unit sits empty between tenants.</small></label><div class="box"><input id="vac" inputmode="decimal" autocomplete="off"><span>% of rent</span></div></div>
-  <div class="row"><label for="bad">Unpaid rent<span class="tag" id="tag-bad"></span></label><div class="box"><input id="bad" inputmode="decimal" autocomplete="off"><span>% of rent</span></div></div>
+  <div class="row"><label for="hours">Hours you spend managing<button type="button" class="tag" id="tag-hours" aria-expanded="false"></button><small>Showings, repairs, paperwork, rent collection.</small></label><div class="box"><input id="hours" inputmode="decimal" autocomplete="off"><span>hrs/mo</span></div></div>
+  <div class="row"><label for="wage">Your pay for that time<button type="button" class="tag" id="tag-wage" aria-expanded="false"></button><small>Pay yourself what your time is worth.</small></label><div class="box"><span>$</span><input id="wage" inputmode="decimal" autocomplete="off"><span>/hr</span></div></div>
+  <div class="row"><label for="emerg">Emergency fund<button type="button" class="tag" id="tag-emerg" aria-expanded="false"></button></label><div class="box"><span>$</span><input id="emerg" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="plan">Planning fund<button type="button" class="tag" id="tag-plan" aria-expanded="false"></button><small>Future upgrades and surprises.</small></label><div class="box"><span>$</span><input id="plan" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="legal">Legal, accounting, licenses<button type="button" class="tag" id="tag-legal" aria-expanded="false"></button></label><div class="box"><span>$</span><input id="legal" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
+  <div class="row"><label for="vac">Vacancy and turnover<button type="button" class="tag" id="tag-vac" aria-expanded="false"></button><small>Share of the year a unit sits empty between tenants.</small></label><div class="box"><input id="vac" inputmode="decimal" autocomplete="off"><span>% of rent</span></div></div>
+  <div class="row"><label for="bad">Unpaid rent<button type="button" class="tag" id="tag-bad" aria-expanded="false"></button></label><div class="box"><input id="bad" inputmode="decimal" autocomplete="off"><span>% of rent</span></div></div>
 </section>
 
 <!-- RESULT -->
@@ -194,13 +247,15 @@ const APTS = {None:1, Two:2, Three:3, Four:4, Five:5, Six:6}; // char_apts -> un
 /* Freddie Mac PMMS 30-yr fixed, ANNUAL averages (%). Years not listed use the nearest listed year. 2025 is approximate. */
 const RATES={1990:10.13,1991:9.25,1992:8.39,1993:7.31,1994:8.38,1995:7.93,1996:7.81,1997:7.60,1998:6.94,1999:7.44,2000:8.05,2001:6.97,2002:6.54,2003:5.83,2004:5.84,2005:5.87,2006:6.41,2007:6.34,2008:6.03,2009:5.04,2010:4.69,2011:4.45,2012:3.66,2013:3.98,2014:4.17,2015:3.85,2016:3.65,2017:3.99,2018:4.54,2019:3.94,2020:3.11,2021:2.96,2022:5.34,2023:6.81,2024:6.72,2025:6.60};
 /* Typical starting values for the steps people rarely know offhand. Rounded on purpose. */
-const TYPICAL={heat:150,water:120,elec:40,garb:30,minor:1800,snow:300,hours:10,wage:OWNER_HOURLY_WAGE,emerg:50,plan:50,legal:400,vac:5,bad:1};
+const TYPICAL={heat:150,water:120,elec:40,garb:30,net:60,minor:1800,snow:300,hours:10,wage:OWNER_HOURLY_WAGE,emerg:50,plan:50,legal:400,vac:5,bad:1};
 const REPL0=[['Roof',15000,20],['Furnace / boiler',8000,20],['Water heater',1800,12],['Windows',15000,25],['Masonry / tuckpointing',12000,30],['Porches',15000,25],['Plumbing / electrical',20000,40],['Appliances',4000,12]];
 const SAMPLES=[
  {n:'2-flat bought 2005',v:{units:2,occ:1,pi:1190,bal:110000,rate:5.9,tax:4200,ins:1700}},
  {n:'2-flat bought 2023',v:{units:2,occ:1,pi:2480,bal:370000,rate:6.8,tax:6200,ins:2400}},
  {n:'3-flat, owner in one',v:{units:3,occ:1,pi:2650,bal:410000,rate:6.5,tax:7000,ins:3000}},
  {n:'2-flat, paid off',v:{units:2,occ:1,pi:0,tax:4800,ins:1900}}];
+const UTIL=['heat','water','elec','garb','net'];
+const UT_DEFAULT={net:true}; // utilities tenants usually pay directly
 const ALL=['units','occ','pi','tax','ins','mi','loan2','hoa','bal','rate',...Object.keys(TYPICAL)];
 
 /* ===== HELPERS ===== */
@@ -211,8 +266,14 @@ const has=id=>String($(id).value).trim()!==''&&!isNaN(parse($(id).value));
 const val=id=>{const v=parse($(id).value);return isFinite(v)&&v>=0?v:0};
 const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
 const TAGS={typical:['typical',''],record:['county record','rec'],est:['estimate',''],lookup:['estimate','']};
-function setF(id,v,src){const e=$(id);e.value=v;e.dataset.src=src||'';tag(id)}
-function tag(id){const t=$('tag-'+id);if(!t)return;const s=TAGS[$(id).dataset.src];t.textContent=s?s[0]:'';t.className='tag'+(s&&s[1]?' '+s[1]:'')}
+const EXPL={};
+function setF(id,v,src,ex){const e=$(id);e.value=v;e.dataset.src=src||'';if(ex)EXPL[id]=ex;else delete EXPL[id];closeEx(id);tag(id)}
+function exText(id){const e=EXPL[id];if(e)return typeof e==='function'?e():e;
+ const src=$(id).dataset.src;
+ if(src==='typical')return 'A typical starting value for a small Chicago building. Replace it with your own number if you know it.';
+ if(src==='est')return 'From the hypothetical example.';return ''}
+function closeEx(id){const x=$('ex-'+id);if(x)x.classList.add('hide');const t=$('tag-'+id);if(t)t.setAttribute('aria-expanded','false')}
+function tag(id){const t=$('tag-'+id);if(!t)return;const s=TAGS[$(id).dataset.src];t.innerHTML=s?s[0]+' &#9662;':'';t.title=s?'How was this worked out?':'';t.className='tag'+(s&&s[1]?' '+s[1]:'')}
 let R=REPL0.map(r=>r.slice()), lookupAV=0, noSale=false, lookupLoan=null;
 
 /* ===== MATH ===== */
@@ -226,6 +287,7 @@ function missing(){
  if(!has('occ')||!Number.isInteger(o))m.push('units you live in');
  else if(has('units')&&o>=u)m.push('units you live in (must be fewer than the total, so at least one is rented)');
  if(!has('pi'))m.push('principal and interest (0 if paid off)');
+ if(has('pi')&&val('pi')>0){if(!has('bal'))m.push('mortgage balance');if(!has('rate'))m.push('interest rate')}
  if(!has('tax'))m.push('property taxes');
  if(!has('ins'))m.push('insurance');
  return m}
@@ -235,25 +297,30 @@ function compute(mult){ // mult: optional {i,f} to scale one replacement cost
  const piInt=(has('bal')&&has('rate'))?Math.min(pi,val('bal')*val('rate')/1200):null;
  const resYear=R.map((r,i)=>{const c=(mult&&mult.i==i)?r[1]*mult.f:r[1];return r[2]>0?c/r[2]:0});
  const m={ // whole-building monthly costs
-  taxes:val('tax')/12, ins:val('ins')/12, hoa:val('hoa'), utilities:val('heat')+val('water')+val('elec')+val('garb'),
+  taxes:val('tax')/12, ins:val('ins')/12, hoa:val('hoa'),
   upkeep:(val('minor')+val('snow'))/12, repl:resYear.reduce((a,b)=>a+b,0)/12,
   pay:val('hours')*val('wage'), funds:val('emerg')+val('plan')+val('legal')/12};
  const base=Object.values(m).reduce((a,b)=>a+b,0);
  const loss=Math.min(0.9,(val('vac')+val('bad'))/100);
- const total=base+pi+loan2;
- const per=x=>x*share/rented;                       // a whole-building amount -> per rented unit
- const rent=mort=>per(base+mort+loan2)/(1-loss);    // rented share, split across rented units, plus cushion
+ // Utilities: skip ones tenants pay directly; the rest are shared by all units, or charged to rented units only.
+ let utilAll=0,utilRented=0;
+ UTIL.forEach(id=>{if($('tp-'+id).checked)return;const a=val(id);utilAll+=a;utilRented+=$('sh-'+id).value==='rented'?a:a*share});
+ const total=base+pi+loan2+utilAll;
+ const per=x=>x*share/rented;                       // a shared whole-building amount -> per rented unit
+ const rentedTotal=(base+pi+loan2)*share+utilRented; // what the rented units cover together
+ const rent=mort=>(per(base+mort+loan2)+utilRented/rented)/(1-loss); // rented share, split across rented units, plus cushion
  const rA=rent(pi);
- return {units,occ,rented,share,total,pi,piInt,m,resYear,loss,rA,rB:piInt===null?null:rent(piInt),per,
-  lines:[['Principal and interest',per(pi)],['Property taxes',per(m.taxes)],['Homeowners insurance',per(m.ins)],...(mi>0?[['Mortgage insurance',per(mi)]]:[]),...(loan2-mi>0?[['Other loans',per(loan2-mi)]]:[]),...(m.hoa>0?[['HOA or condo dues',per(m.hoa)]]:[]),['Utilities',per(m.utilities)],['Routine repairs and yard',per(m.upkeep)],
+ return {units,occ,rented,share,total,rentedTotal,pi,piInt,m,resYear,loss,rA,rB:piInt===null?null:rent(piInt),per,
+  lines:[['Principal and interest',per(pi)],['Property taxes',per(m.taxes)],['Homeowners insurance',per(m.ins)],...(mi>0?[['Mortgage insurance',per(mi)]]:[]),...(loan2-mi>0?[['Other loans',per(loan2-mi)]]:[]),...(m.hoa>0?[['HOA or condo dues',per(m.hoa)]]:[]),['Utilities',utilRented/rented],['Routine repairs and yard',per(m.upkeep)],
    ['Savings for big replacements',per(m.repl)],['Your pay',per(m.pay)],['Emergency, planning, legal',per(m.funds)],['Vacancy and unpaid-rent cushion',rA*loss]]};
 }
 
 /* ===== RENDER ===== */
 function calc(){
- if(lookupAV&&$('tax').dataset.src==='lookup')$('tax').value=lookupTax();
+ if(lookupAV&&$('tax').dataset.src==='lookup'){$('tax').value=lookupTax();const x=$('ex-tax');if(x&&!x.classList.contains('hide'))x.innerHTML=exText('tax')}
  $('seniorRow').classList.toggle('hide',!(lookupAV&&$('tax').dataset.src==='lookup'&&val('occ')>=1));
  $('mortWarn').classList.toggle('hide',!noSale);
+ if(typeof syncShareSel==='function')syncShareSel();
  drawMortInfo();
  drawLinks();
  const miss=missing();
@@ -266,7 +333,7 @@ function calc(){
  const c=compute();
  $('outA').textContent=usd(c.rA);
  $('shareLine').innerHTML=c.occ>0
-  ?`Your building costs <b>${usd(c.total)}</b> a month to run. Your ${plural(c.rented,'rented unit')} ${c.rented===1?'covers':'cover'} ${c.rented} of ${c.units} shares (${Math.round(c.share*100)}%): ${usd(c.total*c.share)}. The ${plural(c.occ,'unit')} you live in ${c.occ===1?'carries':'carry'} the other ${usd(c.total-c.total*c.share)}, as your own housing cost.`
+  ?`Your building costs <b>${usd(c.total)}</b> a month to run. Your ${plural(c.rented,'rented unit')} ${c.rented===1?'covers':'cover'} ${usd(c.rentedTotal)} of that (${c.rented} of ${c.units} shares of shared costs, plus any utilities charged to rented units only). The ${plural(c.occ,'unit')} you live in ${c.occ===1?'carries':'carry'} the other ${usd(c.total-c.rentedTotal)}, as your own housing cost.`
   :`Your building costs <b>${usd(c.total)}</b> a month to run, split across ${plural(c.rented,'rented unit')}.`;
  $('receipt').innerHTML=c.lines.map(([n,v])=>`<tr><td>${n}</td><td class="num">${usd(v)}</td></tr>`).join('')+`<tr class="total"><td>Minimum rent per unit</td><td class="num">${usd(c.rA)}</td></tr>`;
  const mt=c.lines.filter(l=>/^(Principal|Property taxes|Homeowners|Mortgage insurance|Other loans)/.test(l[0])).reduce((a,l)=>a+l[1],0);
@@ -308,17 +375,25 @@ function drawLinks(){
  $('czLinks').innerHTML=[['Craigslist','https://chicago.craigslist.org/search/apa?'+cl],['Zillow',`https://www.zillow.com/${area}/rentals/${beds}-_beds/`],['Apartments.com',`https://www.apartments.com/${area}/${bd}/`]]
   .map(([n,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">Search ${n} &#8599;</a>`).join('')}
 function reset(){
+ UTIL.forEach(id=>{$('tp-'+id).checked=!!UT_DEFAULT[id];$('sh-'+id).value='all'});syncUtil();
  ALL.forEach(id=>setF(id,TYPICAL[id]??'',TYPICAL[id]!==undefined?'typical':''));
  R=REPL0.map(r=>r.slice());drawRepl();lookupAV=0;noSale=false;lookupLoan=null;$('senior').checked=false;
  ['addr','mkt','cz_zip'].forEach(id=>$(id).value='');$('lmsg').innerHTML='';calc()}
 
 /* ===== EVENTS ===== */
-ALL.forEach(id=>$(id).addEventListener('input',()=>{$(id).dataset.src='';tag(id);if(id==='pi')noSale=false;calc()}));
+function syncUtil(){UTIL.forEach(id=>{const off=$('tp-'+id).checked;$(id).closest('.row').classList.toggle('off',off);$(id).disabled=off})}
+UTIL.forEach(id=>{['tp-','sh-'].forEach(pf=>$(pf+id).addEventListener('input',()=>{syncUtil();calc()}))});
+// the shared/rented-only choice only matters when the owner lives in the building
+function syncShareSel(){const own=val('occ')>=1;UTIL.forEach(id=>$('sh-'+id).classList.toggle('hide',!own))}
+ALL.forEach(id=>{const row=$(id).closest('.row'),x=document.createElement('div');x.className='expl hide';x.id='ex-'+id;x.setAttribute('role','note');row.after(x);
+ $('tag-'+id).addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const open=x.classList.contains('hide');
+  if(open){x.innerHTML=exText(id);x.classList.remove('hide')}else x.classList.add('hide');$('tag-'+id).setAttribute('aria-expanded',open)})});
+ALL.forEach(id=>$(id).addEventListener('input',()=>{$(id).dataset.src='';delete EXPL[id];closeEx(id);tag(id);if(id==='pi')noSale=false;calc()}));
 ['mkt','cz_zip','cz_beds','cz_park','cz_laundry','cz_ac','senior','wi','wm'].forEach(id=>$(id).addEventListener('input',calc));
 $('reset').onclick=()=>{reset();window.scrollTo({top:0,behavior:'smooth'})};
 $('print').onclick=()=>window.print();
 $('samples').innerHTML=SAMPLES.map((s,i)=>`<button class="linkish" data-s="${i}">${s.n}</button>`).join(' · ');
-$('samples').onclick=e=>{const i=e.target.dataset.s;if(i===undefined)return;reset();Object.entries(SAMPLES[i].v).forEach(([k,v])=>setF(k,v,'est'));
+$('samples').onclick=e=>{const i=e.target.dataset.s;if(i===undefined)return;reset();Object.entries(SAMPLES[i].v).forEach(([k,v])=>setF(k,v,'est','From the hypothetical example: '+SAMPLES[i].n+'.'));
  $('lmsg').innerHTML='<p class="msg">Hypothetical example, not a real property. Every number is editable.</p>';calc()};
 
 /* ===== ADDRESS LOOKUP ===== */
@@ -326,43 +401,80 @@ async function q(ds,params){const r=await fetch(API+ds+'.json?'+new URLSearchPar
 const isTrue=v=>v===true||/^(true|1|y)$/i.test(String(v));
 const SUFFIX=/^(AVE|AVENUE|ST|STREET|BLVD|BOULEVARD|RD|ROAD|DR|DRIVE|CT|COURT|PL|PLACE|PKWY|PARKWAY|TER|TERRACE|LN|LANE|WAY|HWY)$/;
 const toks=s=>String(s).toUpperCase().replace(/[^A-Z0-9 ]/g,' ').split(/\s+/).filter(Boolean);
-const lmsg=h=>$('lmsg').innerHTML=`<p class="msg">${h}</p>`;
+const lmsg=h=>$('lmsg').innerHTML=`<div class="lk-err">${h}</div>`;
+const SV=(d)=>`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const IC={
+ pin:SV('<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>'),
+ units:SV('<path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/><path d="M8 10h2M14 10h2"/>'),
+ tax:SV('<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/>'),
+ mort:SV('<path d="M3 10l9-6 9 6"/><path d="M5 10v9M9.5 10v9M14.5 10v9M19 10v9"/><path d="M3 21h18"/>'),
+ ins:SV('<path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>')};
+const LK=[['units','Building'],['tax','Property taxes'],['mort','Mortgage'],['ins','Insurance']];
+function lkCard(addr,pin){$('lmsg').innerHTML=`<div class="lk"><div class="lk-head">${IC.pin}<div><b>${addr}</b><span>Cook County PIN ${pin}</span></div></div><ul class="lk-steps">`+
+ LK.map(([k,t])=>`<li id="lk-${k}" class="pending"><span class="ic">${IC[k]}</span><div><b>${t}</b><span class="d">Checking county records&hellip;</span></div><span class="st" aria-hidden="true"></span></li>`).join('')+
+ `</ul><p class="lk-foot">Numbers below are filled in. Click any <b>estimate</b> tag to see how it was worked out.</p></div>`}
+function lkStep(k,state,html){const li=$('lk-'+k);if(!li)return;li.className=state;li.querySelector('.d').innerHTML=html}
+const titleCase=t=>String(t).toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());
 $('addr').addEventListener('keydown',e=>{if(e.key==='Enter')$('go').click()});
 $('go').onclick=async()=>{
  const key=toks($('addr').value).filter(t=>!SUFFIX.test(t)); // house number + street name, without Ave/St/etc.
  if(key.length<2||!/^\d/.test(key[0]))return lmsg('Enter a street address with a house number, like 1234 N Example Ave.');
- lmsg('Looking up...');
+ lmsg('Searching Cook County records&hellip;');
+ let hit;
  try{
   // Full-text search, then keep only rows whose PROPERTY address (not mailing address) matches.
   const hits=await q(DS.addr,{$q:key.join(' '),$limit:'200'});
   const propText=h=>Object.keys(h).filter(k=>/^prop/i.test(k)).map(k=>h[k]).join(' ');
-  const hit=hits.find(h=>{const t=toks(propText(h));return t[0]===key[0]&&key.every(k=>t.includes(k))});
-  if(!hit)return lmsg('We could not find that address in Cook County records. Fill in the steps below yourself.');
-  const pin=hit.pin,zk=Object.keys(hit).find(k=>/^prop.*zip/i.test(k)),zip=zk?String(hit[zk]).slice(0,5):'';
-  const [sales,vals,chars]=await Promise.all([q(DS.sales,{pin,$order:'sale_date DESC',$limit:'20'}),q(DS.values,{pin,$order:'year DESC',$limit:'1'}),
-   q(DS.chars,{pin,$order:'year DESC',$limit:'1'}).catch(()=>[])]);
-  const keepOcc=$('occ').value;reset();if(keepOcc!=='')setF('occ',keepOcc,'');
-  $('addr').value=key.join(' ');if(zip)$('cz_zip').value=zip;
-  const out=[`Found PIN ${pin}.`];
-  const recUnits=chars.length?APTS[chars[0].char_apts]:undefined;
-  if(recUnits&&recUnits<=6){setF('units',recUnits,'record');out.push(`Cook County lists ${plural(recUnits,'unit')}.`)}
-  else if(recUnits>6)out.push('Cook County lists more than 6 units; this calculator is built for 1 to 6.');
-  else out.push('Cook County does not list the number of units; enter it below.');
-  if(vals.length){const av=+(vals[0].board_tot||vals[0].certified_tot||vals[0].mailed_tot);
-   if(av>0){lookupAV=av;setF('tax',lookupTax(),'lookup');out.push(`Taxes estimated from the ${usd(av)} assessed value.`)}}
+  hit=hits.find(h=>{const t=toks(propText(h));return t[0]===key[0]&&key.every(k=>t.includes(k))});
+ }catch(e){return lmsg('We could not reach Cook County records right now. Fill in the steps below yourself, or try an example.')}
+ if(!hit)return lmsg('We could not find that address in Cook County records. Check the spelling, or fill in the steps below yourself.');
+ const pin=hit.pin,zk=Object.keys(hit).find(k=>/^prop.*zip/i.test(k)),zip=zk?String(hit[zk]).slice(0,5):'';
+ const fk=Object.keys(hit).find(k=>/^prop.*full/i.test(k)),shown=fk?titleCase(hit[fk]):$('addr').value;
+ const keepOcc=$('occ').value;reset();if(keepOcc!=='')setF('occ',keepOcc,'');
+ $('addr').value=shown;if(zip)$('cz_zip').value=zip;
+ lkCard(shown,pin);
+ setF('ins',2000,'est','Insurance is not in county records. $2,000 a year is a rough placeholder for a small Chicago building; use the premium on your policy.');
+
+ const pUnits=q(DS.chars,{pin,$order:'year DESC',$limit:'1'}).then(ch=>{
+  const c=ch[0],n=c?APTS[c.char_apts]:undefined,yr=c?parseInt(c.year):'';
+  if(n&&n<=6){setF('units',n,'record',`Cook County Assessor building characteristics, tax year ${yr}: ${c.char_apts==='None'?'a single-family home (no separate apartments)':c.char_apts.toLowerCase()+' apartments'}, property class ${c.class}.`);
+   lkStep('units','done',`${plural(n,'unit')} &middot; county record`)}
+  else if(n>6)lkStep('units','warn','More than 6 units; this calculator is built for 1 to 6.');
+  else lkStep('units','warn','Unit count not on file; enter it below.');
+ }).catch(()=>lkStep('units','warn','Could not load; enter it below.'));
+
+ const pTax=q(DS.values,{pin,$order:'year DESC',$limit:'1'}).then(v=>{
+  const r=v[0],av=r?+(r.board_tot||r.certified_tot||r.mailed_tot):0,yr=r?parseInt(r.year):'';
+  if(!(av>0))return lkStep('tax','warn','Assessed value not on file; enter your tax bill below.');
+  lookupAV=av;
+  setF('tax',lookupTax(),'lookup',()=>{const eq=lookupAV*STATE_EQUALIZER,own=val('occ')>=1,sen=own&&$('senior').checked,ex=own?HOMEOWNER_EXEMPTION+(sen?SENIOR_EXEMPTION:0):0,net=Math.max(0,eq-ex);
+   return `<b>Assessed value</b> ${usd(lookupAV)} (Cook County, tax year ${yr})<br>&times; ${STATE_EQUALIZER} state equalizer = ${usd(eq)}<br>`+
+    (ex?`&minus; ${usd(ex)} ${sen?'homeowner and senior exemptions':'homeowner exemption'} (you live there) = ${usd(net)}<br>`:'')+
+    `&times; ${(TAX_RATE*100).toFixed(1)}% approximate Chicago tax rate = <b>${usd(net*TAX_RATE)} a year</b><br>Your actual tax bill is more accurate if you have it.`});
+  lkStep('tax','done',`${usd(lookupTax())}/yr &middot; estimated from the ${usd(av)} assessed value`);
+ }).catch(()=>lkStep('tax','warn','Could not load; enter your tax bill below.'));
+
+ const pSale=q(DS.sales,{pin,$order:'sale_date DESC',$limit:'20'}).then(sales=>{
   const sale=sales.find(s=>+s.sale_price>10000&&!isTrue(s.is_multisale)&&!isTrue(s.sale_filter_deed_type));
-  if(sale){
-   const d=new Date(String(sale.sale_date).slice(0,10)),yr=d.getFullYear(),price=+sale.sale_price;
-   const yrs=Object.keys(RATES).map(Number),rt=RATES[yr]??RATES[yr<Math.min(...yrs)?Math.min(...yrs):Math.max(...yrs)];
-   const orig=Math.round(price*(1-DOWN_PAYMENT)),months=Math.max(0,Math.round((Date.now()-d)/(864e5*30.4375)));
-   if(months>=360){noSale=true;setF('pi',0,'est');$('mortWarnWhy').textContent=`The last sale was in ${yr}, more than 30 years ago, so a 30-year mortgage from then would be paid off.`}
-   else{lookupLoan={orig,price,yr,rt};setF('pi',Math.round(pmt(orig,rt,30)),'est');setF('bal',Math.round(balanceAfter(orig,rt,30,months)),'est');setF('rate',rt,'est');
-    out.push(`Mortgage estimated from the ${usd(price)} sale in ${yr} (${Math.round(DOWN_PAYMENT*100)}% down, ${rt}% rate).`)}
-  } else {noSale=true;setF('pi',0,'est');$('mortWarnWhy').textContent='Cook County has no recent market sale on file (for example, it was inherited or transferred within a family).'}
-  setF('ins',2000,'est');
-  out.push('Numbers marked "estimate" are rough; replace them with your real ones if you have them.');
-  lmsg(out.join(' '));calc();
- }catch(e){lmsg('We could not reach Cook County records right now. Fill in the steps below yourself, or try an example.')}};
+  const paidOff=why=>{noSale=true;setF('pi',0,'est',why+' So we assumed the building is paid off. If you have a mortgage, enter your numbers.');$('mortWarnWhy').textContent=why;
+   lkStep('mort','warn','No usable sale on file; assumed paid off. Enter your mortgage if you have one.')};
+  if(!sale)return paidOff('Cook County has no recent market sale on file for this property (for example, it was inherited or transferred within a family).');
+  const d=new Date(String(sale.sale_date).slice(0,10)),yr=d.getFullYear(),price=+sale.sale_price;
+  const yrs=Object.keys(RATES).map(Number),rt=RATES[yr]??RATES[yr<Math.min(...yrs)?Math.min(...yrs):Math.max(...yrs)];
+  const orig=Math.round(price*(1-DOWN_PAYMENT)),months=Math.max(0,Math.round((Date.now()-d)/(864e5*30.4375)));
+  if(months>=360)return paidOff(`The last sale was in ${yr}, more than 30 years ago, so a 30-year mortgage from then would be paid off.`);
+  const pay=Math.round(pmt(orig,rt,30)),bal=Math.round(balanceAfter(orig,rt,30,months));
+  const dt=d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  lookupLoan={orig,price,yr,rt};
+  setF('pi',pay,'est',`<b>Sale price</b> ${usd(price)} (${dt})<br>&minus; ${Math.round(DOWN_PAYMENT*100)}% assumed down payment = ${usd(orig)} loan<br>30-year fixed loan at ${rt}% (Freddie Mac's ${yr} average) = <b>${usd(pay)} a month</b> principal and interest.<br>If you refinanced or put down a different amount, use your real payment.`);
+  setF('bal',bal,'est',`${usd(orig)} loan at ${rt}%, after ${months} monthly payments since ${dt}, leaves about <b>${usd(bal)}</b> still owed.`);
+  setF('rate',rt,'est',`Freddie Mac's average 30-year fixed rate in ${yr}, the year of the last sale. If you refinanced, use your current rate.`);
+  lkStep('mort','done',`${usd(orig)} at ${rt}% &middot; estimated from the ${usd(price)} sale in ${yr}`);
+ }).catch(()=>lkStep('mort','warn','Could not load; enter your mortgage below.'));
+
+ lkStep('ins','warn','Not in county records &middot; $2,000/yr placeholder. Use your policy.');
+ await Promise.allSettled([pUnits,pTax,pSale]);calc();
+};
 
 reset();
 </script>
