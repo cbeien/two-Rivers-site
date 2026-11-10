@@ -359,9 +359,11 @@ function calc(){
  $('outA').textContent=usd(c.rA);
  {const every=+$('vac_every').value,gap=+$('vac_gap').value,set=c.rA*c.vacF,yrs=every/12,gapTxt=gap===0.5?'2 weeks':plural(gap,'month');
   $('vacOut').innerHTML=`Set aside <b>${usd(set)} a month</b> per rented unit. Over ${yrs===1?'a year':yrs+' years'} that adds up to ${usd(set*every)}, enough to cover ${gapTxt} of lost rent between tenants.`}
- $('shareLine').innerHTML=c.occ>0
-  ?`Your building costs <b>${usd(c.total)}</b> a month to run. Your ${plural(c.rented,'rented unit')} ${c.rented===1?'covers':'cover'} ${usd(c.rentedTotal)} of that. The other ${usd(c.total-c.rentedTotal)} is your own housing cost for the ${plural(c.occ,'unit')} you live in.`
-  :`Your building costs <b>${usd(c.total)}</b> a month to run, split across ${plural(c.rented,'rented unit')}.`;
+ {const each=c.rentedTotal/c.rented,extra=c.rA-each,many=c.rented>1;
+  const cover=c.occ>0
+   ?`Your ${plural(c.rented,'rented unit')} ${many?'cover':'covers'} ${usd(c.rentedTotal)} of that${many?`, or ${usd(each)} each`:''}. The other ${usd(c.total-c.rentedTotal)} is your own housing cost for the ${plural(c.occ,'unit')} you live in.`
+   :`Split across ${plural(c.rented,'rented unit')}, that's ${usd(each)} each.`;
+  $('shareLine').innerHTML=`Your building costs <b>${usd(c.total)}</b> a month to run. ${cover} Add ${usd(extra)}${many?' each':''} to save for empty months between tenants and unpaid rent, and you get <b>${usd(c.rA)}</b>.`}
  $('receipt').innerHTML=c.lines.map(([n,v])=>`<tr><td>${n}</td><td class="num">${usd(v)}</td></tr>`).join('')+`<tr class="total"><td>Minimum rent per unit</td><td class="num">${usd(c.rA)}</td></tr>`;
  const mt=c.lines.filter(l=>/^(Principal|Property taxes|Homeowners|Mortgage insurance|Other loans)/.test(l[0])).reduce((a,l)=>a+l[1],0);
  $('scary').textContent=c.rA>0?`Financing costs (mortgage payment, taxes, insurance, other loans) are ${Math.round(mt/c.rA*100)}% of this. Everything else, including savings for every big replacement, is ${100-Math.round(mt/c.rA*100)}%.`:'';
