@@ -212,7 +212,7 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
   <div class="row"><label for="bad">Unpaid rent<button type="button" class="tag" id="tag-bad" aria-expanded="false"></button></label><div class="box"><input id="bad" inputmode="decimal" autocomplete="off"><span>% of rent</span></div></div>
 </section>
 
-<button type="button" class="float" id="float" aria-live="polite" aria-label="Jump to your minimum rent"><div class="fl-l">Your minimum rent<small id="flM">per rented unit, per month</small></div><div class="fl-v" id="flV"></div></button>
+<button type="button" class="float" id="float" aria-live="polite" aria-label="Your minimum rent"><div class="fl-l">Your minimum rent<small id="flM">per rented unit, per month</small></div><div class="fl-v" id="flV"></div></button>
 
 <!-- RESULT -->
 <section class="step result" id="result">
@@ -438,7 +438,19 @@ function reset(){
 let resultVisible=false;
 new IntersectionObserver(es=>{resultVisible=es[0].isIntersecting;$('float').classList.toggle('gone',resultVisible)},{threshold:0.25}).observe($('result'));
 addEventListener('scroll',()=>$('float').classList.toggle('gone',resultVisible),{passive:true});
-$('float').onclick=()=>$('result').scrollIntoView({behavior:'smooth',block:'start'});
+function firstMissing(){ // first required field still empty or invalid, in page order
+ const u=val('units'),o=val('occ');
+ if(!has('units')||!(u>=1&&u<=6&&Number.isInteger(u)))return 'units';
+ if(!has('occ')||!Number.isInteger(o)||o>=u)return 'occ';
+ if(!has('pi'))return 'pi';
+ if(val('pi')>0&&!has('bal'))return 'bal';
+ if(val('pi')>0&&!has('rate'))return 'rate';
+ if(!has('tax'))return 'tax';
+ if(!has('ins'))return 'ins';
+ return null}
+$('float').onclick=()=>{const id=firstMissing();
+ if(id){$(id).closest('.step').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>$(id).focus({preventScroll:true}),400)}
+ else $('result').scrollIntoView({behavior:'smooth',block:'start'})};
 $('openLC').onclick=()=>{openLC();$('lcNote').textContent='Enter the details from your loan papers or mortgage statement. The payment, balance and rate above update as you type.';runLC()};
 $('closeLC').onclick=closeLC;
 ['lc_amt','lc_rate','lc_term','lc_start'].forEach(id=>$(id).addEventListener('input',runLC));
