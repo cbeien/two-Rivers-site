@@ -51,6 +51,13 @@ button.tag[aria-expanded=true]{background:var(--soft)}
 .lc-grid .box{background:var(--card)}
 .lc-grid select,.lc-grid input[type=month]{font:inherit;font-size:16px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
 .lc-out{margin-top:12px;font-size:15px}
+.float{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:50;width:min(724px,calc(100vw - 24px));display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 18px;border-radius:12px;background:var(--card);border:2px solid var(--acc);box-shadow:0 6px 24px rgba(0,0,0,.15);cursor:pointer;font:inherit;color:var(--ink);text-align:left;transition:opacity .2s,transform .2s}
+.float.gone{opacity:0;transform:translate(-50%,12px);pointer-events:none}
+.float .fl-l{font-size:15px;font-weight:600}
+.float .fl-l small{display:block;font-weight:400;font-size:13px;color:var(--mute)}
+.float .fl-v{font-size:26px;font-weight:700;color:var(--acc);white-space:nowrap}
+main{padding-bottom:110px}
+@media print{.float{display:none!important}}
 .lk{margin-top:10px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .lk-head{display:flex;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
 .lk-head svg{color:var(--acc);flex:none}
@@ -205,6 +212,8 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
   <div class="row"><label for="bad">Unpaid rent<button type="button" class="tag" id="tag-bad" aria-expanded="false"></button></label><div class="box"><input id="bad" inputmode="decimal" autocomplete="off"><span>% of rent</span></div></div>
 </section>
 
+<button type="button" class="float" id="float" aria-live="polite" aria-label="Jump to your minimum rent"><div class="fl-l">Your minimum rent<small id="flM">per rented unit, per month</small></div><div class="fl-v" id="flV"></div></button>
+
 <!-- RESULT -->
 <section class="step result" id="result">
   <h2>Your minimum rent</h2>
@@ -352,11 +361,12 @@ function calc(){
  if(miss.length){
   $('answer').classList.add('hide');$('missing').classList.remove('hide');
   $('missing').innerHTML='To see your minimum rent, fill in: '+miss.map(x=>`<b>${x}</b>`).join(', ')+'.';
+  $('flV').textContent='—';$('flM').textContent='Fill in steps 1 and 2 to see it';
   $('mktOut').innerHTML='';$('wiOut').textContent='Fill in steps 1 and 2 first.';
   $('vacOut').textContent=`Fill in steps 1 and 2 to see how much to set aside.`;return}
  $('missing').classList.add('hide');$('answer').classList.remove('hide');
  const c=compute();
- $('outA').textContent=usd(c.rA);
+ $('outA').textContent=usd(c.rA);$('flV').textContent=usd(c.rA);$('flM').textContent='per rented unit, per month · updates as you type';
  {const every=+$('vac_every').value,gap=+$('vac_gap').value,set=c.rA*c.vacF,yrs=every/12,gapTxt=gap===0.5?'2 weeks':plural(gap,'month');
   $('vacOut').innerHTML=`Set aside <b>${usd(set)} a month</b> per rented unit. Over ${yrs===1?'a year':yrs+' years'} that adds up to ${usd(set*every)}, enough to cover ${gapTxt} of lost rent between tenants.`}
  {const each=c.rentedTotal/c.rented,extra=c.rA-each,many=c.rented>1;
@@ -424,6 +434,11 @@ function reset(){
  ['addr','mkt','cz_zip'].forEach(id=>$(id).value='');$('lmsg').innerHTML='';calc()}
 
 /* ===== EVENTS ===== */
+// Floating minimum rent: visible while scrolling, hidden when the full result is on screen.
+let resultVisible=false;
+new IntersectionObserver(es=>{resultVisible=es[0].isIntersecting;$('float').classList.toggle('gone',resultVisible)},{threshold:0.25}).observe($('result'));
+addEventListener('scroll',()=>$('float').classList.toggle('gone',resultVisible),{passive:true});
+$('float').onclick=()=>$('result').scrollIntoView({behavior:'smooth',block:'start'});
 $('openLC').onclick=()=>{openLC();$('lcNote').textContent='Enter the details from your loan papers or mortgage statement. The payment, balance and rate above update as you type.';runLC()};
 $('closeLC').onclick=closeLC;
 ['lc_amt','lc_rate','lc_term','lc_start'].forEach(id=>$(id).addEventListener('input',runLC));
