@@ -84,26 +84,24 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
 
 <!-- STEP 2 -->
 <section class="step">
-  <h2><span class="n">2</span>Mortgage</h2>
-  <div id="mortWarn" class="msg warn hide" role="alert"><b>No usable sale record was found, so we assumed the building is paid off.</b> <span id="mortWarnWhy"></span> If you have a mortgage, enter your payment below.</div>
-  <div id="mortInfo" class="msg hide"></div>
-  <div class="row"><label for="pi">Monthly mortgage payment<span class="tag" id="tag-pi"></span><small>Principal and interest only. Enter 0 if it's paid off.</small></label><div class="box"><span>$</span><input id="pi" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
-  <div class="row"><label for="loan2">Other loan payments, optional<span class="tag" id="tag-loan2"></span><small>Home equity, renovation, or repair loans used for the building. If you have more than one, add the monthly payments together.</small></label><div class="box"><span>$</span><input id="loan2" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
-  <div class="row"><label for="bal">Mortgage balance today, optional<span class="tag" id="tag-bal"></span><small>What you still owe. With the rate, shows an interest-only view.</small></label><div class="box"><span>$</span><input id="bal" inputmode="decimal" autocomplete="off"></div></div>
+  <h2><span class="n">2</span>Estimated financing costs</h2>
+  <p class="hint">What most owners think of as their "mortgage payment": the loan, plus the taxes and insurance usually paid through it.</p>
+  <div id="mortWarn" class="msg warn hide" role="alert"><b>No usable sale record was found, so we assumed the building is paid off.</b> <span id="mortWarnWhy"></span> If you have a mortgage, enter principal and interest below.</div>
+  <div class="row"><label for="pi">Principal and interest<span class="tag" id="tag-pi"></span><small>The loan part of your payment. Enter 0 if it's paid off.</small></label><div class="box"><span>$</span><input id="pi" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="tax">Property taxes<span class="tag" id="tag-tax"></span><small>The yearly total from your tax bill.</small></label><div class="box"><span>$</span><input id="tax" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
+  <div class="row hide" id="seniorRow"><label class="chk" style="font-weight:400"><input type="checkbox" id="senior"> I'm 65 or older (adds the senior exemption to the tax estimate)</label></div>
+  <div class="row"><label for="ins">Homeowners insurance<span class="tag" id="tag-ins"></span><small>The yearly premium. A rough guess is fine.</small></label><div class="box"><span>$</span><input id="ins" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
+  <div class="row"><label for="mi">Mortgage insurance, if any<span class="tag" id="tag-mi"></span><small>PMI, or MIP on an FHA loan. Usually charged when the down payment was under 20%.</small></label><div class="box"><span>$</span><input id="mi" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div id="pitiTotal" class="msg hide"></div>
+  <div class="row"><label for="loan2">Other loan payments, if any<span class="tag" id="tag-loan2"></span><small>Home equity, renovation, or repair loans used for the building. Add them together if you have more than one.</small></label><div class="box"><span>$</span><input id="loan2" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="bal">Mortgage balance today, optional<span class="tag" id="tag-bal"></span><small>What you still owe. With the rate, shows how much of your payment is interest.</small></label><div class="box"><span>$</span><input id="bal" inputmode="decimal" autocomplete="off"></div></div>
   <div class="row"><label for="rate">Interest rate, optional<span class="tag" id="tag-rate"></span></label><div class="box"><input id="rate" inputmode="decimal" autocomplete="off"><span>%</span></div></div>
-</section>
-
-<!-- STEP 3 -->
-<section class="step">
-  <h2><span class="n">3</span>Taxes and insurance</h2>
-  <div class="row"><label for="tax">Property taxes<span class="tag" id="tag-tax"></span><small>From your tax bill if you have it.</small></label><div class="box"><span>$</span><input id="tax" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
-  <div class="row hide" id="seniorRow"><label class="chk" style="font-weight:400"><input type="checkbox" id="senior"> I'm 65 or older (adds the senior exemption to the estimate)</label></div>
-  <div class="row"><label for="ins">Insurance<span class="tag" id="tag-ins"></span><small>From your policy. A rough guess is fine.</small></label><div class="box"><span>$</span><input id="ins" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
+  <div id="mortInfo" class="msg hide"></div>
 </section>
 
 <!-- STEP 4 -->
 <section class="step">
-  <h2><span class="n">4</span>Utilities you pay</h2>
+  <h2><span class="n">3</span>Utilities you pay</h2>
   <p class="hint">Only what you pay as the owner, not what tenants pay. Typical amounts are filled in.</p>
   <div class="row"><label for="heat">Heat<span class="tag" id="tag-heat"></span></label><div class="box"><span>$</span><input id="heat" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
   <div class="row"><label for="water">Water and sewer<span class="tag" id="tag-water"></span></label><div class="box"><span>$</span><input id="water" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
@@ -113,7 +111,7 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
 
 <!-- STEP 5 -->
 <section class="step">
-  <h2><span class="n">5</span>Repairs and replacements</h2>
+  <h2><span class="n">4</span>Repairs and replacements</h2>
   <div class="row"><label for="minor">Routine repairs<span class="tag" id="tag-minor"></span><small>Leaky faucets, broken locks, small fixes.</small></label><div class="box"><span>$</span><input id="minor" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
   <div class="row"><label for="snow">Snow and yard care<span class="tag" id="tag-snow"></span></label><div class="box"><span>$</span><input id="snow" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
   <p class="hint" style="margin:14px 0 4px"><b>Big replacements.</b> Set money aside each month so the roof or furnace is paid for when it goes. Cost divided by years it lasts.</p>
@@ -122,7 +120,7 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
 
 <!-- STEP 6 -->
 <section class="step">
-  <h2><span class="n">6</span>Your time and savings</h2>
+  <h2><span class="n">5</span>Your time and savings</h2>
   <div class="row"><label for="hours">Hours you spend managing<span class="tag" id="tag-hours"></span><small>Showings, repairs, paperwork, rent collection.</small></label><div class="box"><input id="hours" inputmode="decimal" autocomplete="off"><span>hrs/mo</span></div></div>
   <div class="row"><label for="wage">Your pay for that time<span class="tag" id="tag-wage"></span><small>Pay yourself what your time is worth.</small></label><div class="box"><span>$</span><input id="wage" inputmode="decimal" autocomplete="off"><span>/hr</span></div></div>
   <div class="row"><label for="emerg">Emergency fund<span class="tag" id="tag-emerg"></span></label><div class="box"><span>$</span><input id="emerg" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
@@ -174,7 +172,7 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
 <div class="actions noprint"><button id="print">Print / save as PDF</button><button id="reset">Start over</button></div>
 
 <details><summary><b>How this works</b></summary>
-<p>Add up what the whole building costs each month: mortgage, any other loans for the building, taxes, insurance, utilities you pay, repairs, savings for big replacements, pay for your time, and savings funds. The rented units cover their share of that total. In a 2-flat where you live in one unit, the rented unit covers half. In a 3-flat where you live in one, the two rented units cover two thirds between them. The unit you live in carries the rest, as your own housing cost. A cushion for vacancy and unpaid rent is added on top.</p>
+<p>Add up what the whole building costs each month: financing costs (principal and interest, taxes, insurance, mortgage insurance, any other loans for the building), utilities you pay, repairs, savings for big replacements, pay for your time, and savings funds. The rented units cover their share of that total. In a 2-flat where you live in one unit, the rented unit covers half. In a 3-flat where you live in one, the two rented units cover two thirds between them. The unit you live in carries the rest, as your own housing cost. A cushion for vacancy and unpaid rent is added on top.</p>
 <p>The interest-only view counts just the interest part of the mortgage, based on what you still owe today. The principal part is money you keep, as equity in the building.</p>
 <p>Address lookups estimate taxes as assessed value x state equalizer, minus the homeowner exemption if you live there ($10,000, plus $8,000 more if you are 65 or older), x the tax rate. The mortgage estimate assumes 20% down and the average 30-year rate in the year of the last sale. Your real numbers are better if you have them.</p></details>
 
@@ -202,7 +200,7 @@ const SAMPLES=[
  {n:'2-flat bought 2023',v:{units:2,occ:1,pi:2480,bal:370000,rate:6.8,tax:6200,ins:2400}},
  {n:'3-flat, owner in one',v:{units:3,occ:1,pi:2650,bal:410000,rate:6.5,tax:7000,ins:3000}},
  {n:'2-flat, paid off',v:{units:2,occ:1,pi:0,tax:4800,ins:1900}}];
-const ALL=['units','occ','pi','loan2','bal','rate','tax','ins',...Object.keys(TYPICAL)];
+const ALL=['units','occ','pi','tax','ins','mi','loan2','bal','rate',...Object.keys(TYPICAL)];
 
 /* ===== HELPERS ===== */
 const $=id=>document.getElementById(id);
@@ -226,17 +224,17 @@ function missing(){
  if(!has('units')||!(u>=1&&u<=6&&Number.isInteger(u)))m.push('units in the building (1 to 6)');
  if(!has('occ')||!Number.isInteger(o))m.push('units you live in');
  else if(has('units')&&o>=u)m.push('units you live in (must be fewer than the total, so at least one is rented)');
- if(!has('pi'))m.push('monthly mortgage payment (0 if paid off)');
+ if(!has('pi'))m.push('principal and interest (0 if paid off)');
  if(!has('tax'))m.push('property taxes');
  if(!has('ins'))m.push('insurance');
  return m}
 function compute(mult){ // mult: optional {i,f} to scale one replacement cost
  const units=val('units'),occ=val('occ'),rented=units-occ,share=rented/units;
- const pi=val('pi'),loan2=val('loan2'); // other loans count in full in both views (no balance/rate to split out interest)
+ const pi=val('pi'),loan2=val('loan2')+val('mi'),mi=val('mi'); // mortgage insurance and other loans count in full in both views // other loans count in full in both views (no balance/rate to split out interest)
  const piInt=(has('bal')&&has('rate'))?Math.min(pi,val('bal')*val('rate')/1200):null;
  const resYear=R.map((r,i)=>{const c=(mult&&mult.i==i)?r[1]*mult.f:r[1];return r[2]>0?c/r[2]:0});
  const m={ // whole-building monthly costs
-  taxes:(val('tax')+val('ins'))/12, utilities:val('heat')+val('water')+val('elec')+val('garb'),
+  taxes:val('tax')/12, ins:val('ins')/12, utilities:val('heat')+val('water')+val('elec')+val('garb'),
   upkeep:(val('minor')+val('snow'))/12, repl:resYear.reduce((a,b)=>a+b,0)/12,
   pay:val('hours')*val('wage'), funds:val('emerg')+val('plan')+val('legal')/12};
  const base=Object.values(m).reduce((a,b)=>a+b,0);
@@ -246,7 +244,7 @@ function compute(mult){ // mult: optional {i,f} to scale one replacement cost
  const rent=mort=>per(base+mort+loan2)/(1-loss);    // rented share, split across rented units, plus cushion
  const rA=rent(pi);
  return {units,occ,rented,share,total,pi,piInt,m,resYear,loss,rA,rB:piInt===null?null:rent(piInt),per,
-  lines:[['Mortgage',per(pi)],...(loan2>0?[['Other loans',per(loan2)]]:[]),['Property taxes and insurance',per(m.taxes)],['Utilities',per(m.utilities)],['Routine repairs and yard',per(m.upkeep)],
+  lines:[['Principal and interest',per(pi)],['Property taxes',per(m.taxes)],['Homeowners insurance',per(m.ins)],...(mi>0?[['Mortgage insurance',per(mi)]]:[]),...(loan2-mi>0?[['Other loans',per(loan2-mi)]]:[]),['Utilities',per(m.utilities)],['Routine repairs and yard',per(m.upkeep)],
    ['Savings for big replacements',per(m.repl)],['Your pay',per(m.pay)],['Emergency, planning, legal',per(m.funds)],['Vacancy and unpaid-rent cushion',rA*loss]]};
 }
 
@@ -262,7 +260,7 @@ function calc(){
  if(miss.length){
   $('answer').classList.add('hide');$('missing').classList.remove('hide');
   $('missing').innerHTML='To see your minimum rent, fill in: '+miss.map(x=>`<b>${x}</b>`).join(', ')+'.';
-  $('mktOut').innerHTML='';$('wiOut').textContent='Fill in steps 1 to 3 first.';return}
+  $('mktOut').innerHTML='';$('wiOut').textContent='Fill in steps 1 and 2 first.';return}
  $('missing').classList.add('hide');$('answer').classList.remove('hide');
  const c=compute();
  $('outA').textContent=usd(c.rA);
@@ -270,8 +268,8 @@ function calc(){
   ?`Your building costs <b>${usd(c.total)}</b> a month to run. Your ${plural(c.rented,'rented unit')} ${c.rented===1?'covers':'cover'} ${c.rented} of ${c.units} shares (${Math.round(c.share*100)}%): ${usd(c.total*c.share)}. The ${plural(c.occ,'unit')} you live in ${c.occ===1?'carries':'carry'} the other ${usd(c.total-c.total*c.share)}, as your own housing cost.`
   :`Your building costs <b>${usd(c.total)}</b> a month to run, split across ${plural(c.rented,'rented unit')}.`;
  $('receipt').innerHTML=c.lines.map(([n,v])=>`<tr><td>${n}</td><td class="num">${usd(v)}</td></tr>`).join('')+`<tr class="total"><td>Minimum rent per unit</td><td class="num">${usd(c.rA)}</td></tr>`;
- const mt=c.lines.filter(l=>/^(Mortgage|Other loans|Property taxes)/.test(l[0])).reduce((a,l)=>a+l[1],0);
- $('scary').textContent=c.rA>0?`Loan payments, taxes and insurance are ${Math.round(mt/c.rA*100)}% of this. Everything else, including savings for every big replacement, is ${100-Math.round(mt/c.rA*100)}%.`:'';
+ const mt=c.lines.filter(l=>/^(Principal|Property taxes|Homeowners|Mortgage insurance|Other loans)/.test(l[0])).reduce((a,l)=>a+l[1],0);
+ $('scary').textContent=c.rA>0?`Financing costs (mortgage payment, taxes, insurance, other loans) are ${Math.round(mt/c.rA*100)}% of this. Everything else, including savings for every big replacement, is ${100-Math.round(mt/c.rA*100)}%.`:'';
  const ob=$('outB');
  if(c.rB!==null&&c.pi>0){ob.classList.remove('hide');ob.innerHTML=`<b>Interest-only view: ${usd(c.rB)} per unit.</b> That counts only the interest part of your mortgage and treats the principal as your own savings, since it builds equity you keep.`}else ob.classList.add('hide');
  const i=+$('wi').value||0,f=+$('wm').value;$('wiV').textContent=f;
@@ -290,6 +288,9 @@ function drawMortInfo(){ // estimated loan (from lookup) and this month's intere
  if(has('pi')&&pi>0&&has('bal')&&bal>0&&has('rate')){
   const int=Math.min(pi,bal*rate/1200);
   parts.push(`Of your ${usd(pi)} monthly payment, about <b>${usd(int)} is interest</b> and ${usd(pi-int)} pays down the ${usd(bal)} you still owe.`)}
+ const piti=val('pi')+val('tax')/12+val('ins')/12+val('mi');
+ const pt=$('pitiTotal');
+ if(has('pi')||has('tax')||has('ins')){pt.classList.remove('hide');pt.innerHTML=`<b>Estimated monthly payment: ${usd(piti)}</b> = ${usd(val('pi'))} principal and interest + ${usd(val('tax')/12)} taxes + ${usd(val('ins')/12)} insurance${val('mi')>0?` + ${usd(val('mi'))} mortgage insurance`:''}. Compare it with your mortgage statement.`}else pt.classList.add('hide');
  $('mortInfo').innerHTML=parts.join('<br>');$('mortInfo').classList.toggle('hide',!parts.length)}
 function drawRepl(){
  $('rt').innerHTML=R.map((r,i)=>`<tr><td>${r[0]}</td><td class="num"><div class="box"><span>$</span><input inputmode="decimal" value="${r[1]}" data-i="${i}" data-k="1" aria-label="${r[0]} cost"></div></td><td class="num"><div class="box" style="max-width:100px"><input inputmode="numeric" value="${r[2]}" data-i="${i}" data-k="2" aria-label="${r[0]} years it lasts"><span>yrs</span></div></td><td class="num" id="rp${i}"></td></tr>`).join('');
