@@ -177,10 +177,11 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
   <h2><span class="n">5</span>Your time and savings</h2>
   <div class="row"><label for="hours">Hours you spend managing<button type="button" class="tag" id="tag-hours" aria-expanded="false"></button><small>Showings, repairs, paperwork, rent collection.</small></label><div class="box"><input id="hours" inputmode="decimal" autocomplete="off"><span>hrs/mo</span></div></div>
   <div class="row"><label for="wage">Your pay for that time<button type="button" class="tag" id="tag-wage" aria-expanded="false"></button><small>Pay yourself what your time is worth.</small></label><div class="box"><span>$</span><input id="wage" inputmode="decimal" autocomplete="off"><span>/hr</span></div></div>
-  <div class="row"><label for="emerg">Emergency fund<button type="button" class="tag" id="tag-emerg" aria-expanded="false"></button></label><div class="box"><span>$</span><input id="emerg" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
-  <div class="row"><label for="plan">Planning fund<button type="button" class="tag" id="tag-plan" aria-expanded="false"></button><small>Future upgrades and surprises.</small></label><div class="box"><span>$</span><input id="plan" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="fund">Emergency and planning fund<button type="button" class="tag" id="tag-fund" aria-expanded="false"></button><small>Money set aside for surprises and future upgrades.</small></label><div class="box"><span>$</span><input id="fund" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
   <div class="row"><label for="legal">Legal, accounting, licenses<button type="button" class="tag" id="tag-legal" aria-expanded="false"></button></label><div class="box"><span>$</span><input id="legal" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
-  <div class="row"><label for="vac">Vacancy and turnover<button type="button" class="tag" id="tag-vac" aria-expanded="false"></button><small>Share of the year a unit sits empty between tenants.</small></label><div class="box"><input id="vac" inputmode="decimal" autocomplete="off"><span>% of rent</span></div></div>
+  <div class="row"><label for="vac_every">How often do you get a new tenant?<small>On average, for each rented unit.</small></label><select id="vac_every" style="font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);width:100%"><option value="12">Every year</option><option value="24">Every 2 years</option><option value="36">Every 3 years</option><option value="60">Every 5 years</option><option value="120">Rarely (about every 10 years)</option></select></div>
+  <div class="row"><label for="vac_gap">How long does it take to rent between tenants?<small>Including cleanup and showings.</small></label><select id="vac_gap" style="font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);width:100%"><option value="0.5">About 2 weeks</option><option value="1">About 1 month</option><option value="2">About 2 months</option><option value="3">About 3 months</option></select></div>
+  <div id="vacOut" class="msg"></div>
   <div class="row"><label for="bad">Unpaid rent<button type="button" class="tag" id="tag-bad" aria-expanded="false"></button></label><div class="box"><input id="bad" inputmode="decimal" autocomplete="off"><span>% of rent</span></div></div>
 </section>
 
@@ -226,7 +227,7 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
 <div class="actions noprint"><button id="print">Print / save as PDF</button><button id="reset">Start over</button></div>
 
 <details><summary><b>How this works</b></summary>
-<p>Add up what the whole building costs each month: financing costs (principal and interest, taxes, insurance, mortgage insurance, any other loans for the building), utilities you pay, repairs, savings for big replacements, pay for your time, and savings funds. The rented units cover their share of that total. In a 2-flat where you live in one unit, the rented unit covers half. In a 3-flat where you live in one, the two rented units cover two thirds between them. The unit you live in carries the rest, as your own housing cost. A cushion for vacancy and unpaid rent is added on top.</p>
+<p>Add up what the whole building costs each month: financing costs (principal and interest, taxes, insurance, mortgage insurance, any other loans for the building), utilities you pay, repairs, savings for big replacements, pay for your time, and an emergency and planning fund. The rented units cover their share of that total. In a 2-flat where you live in one unit, the rented unit covers half. In a 3-flat where you live in one, the two rented units cover two thirds between them. The unit you live in carries the rest, as your own housing cost. Savings for vacancies come from how often you get a new tenant and how long it takes to re-rent: one month empty every two years means a unit earns rent 23 of 24 months, so rent is set to cover a full year of costs in that time.</p>
 <p>The interest-only view counts just the interest part of the mortgage, based on what you still owe today. The principal part is money you keep, as equity in the building.</p>
 <p>Address lookups estimate taxes as assessed value x state equalizer, minus the homeowner exemption if you live there ($10,000, plus $8,000 more if you are 65 or older), x the tax rate. The mortgage estimate assumes 20% down and the average 30-year rate in the year of the last sale. Your real numbers are better if you have them.</p></details>
 
@@ -247,7 +248,8 @@ const APTS = {None:1, Two:2, Three:3, Four:4, Five:5, Six:6}; // char_apts -> un
 /* Freddie Mac PMMS 30-yr fixed, ANNUAL averages (%). Years not listed use the nearest listed year. 2025 is approximate. */
 const RATES={1990:10.13,1991:9.25,1992:8.39,1993:7.31,1994:8.38,1995:7.93,1996:7.81,1997:7.60,1998:6.94,1999:7.44,2000:8.05,2001:6.97,2002:6.54,2003:5.83,2004:5.84,2005:5.87,2006:6.41,2007:6.34,2008:6.03,2009:5.04,2010:4.69,2011:4.45,2012:3.66,2013:3.98,2014:4.17,2015:3.85,2016:3.65,2017:3.99,2018:4.54,2019:3.94,2020:3.11,2021:2.96,2022:5.34,2023:6.81,2024:6.72,2025:6.60};
 /* Typical starting values for the steps people rarely know offhand. Rounded on purpose. */
-const TYPICAL={heat:150,water:120,elec:40,garb:30,net:60,minor:1800,snow:300,hours:10,wage:OWNER_HOURLY_WAGE,emerg:50,plan:50,legal:400,vac:5,bad:1};
+const TYPICAL={heat:150,water:120,elec:40,garb:30,net:60,minor:1800,snow:300,hours:10,wage:OWNER_HOURLY_WAGE,fund:100,legal:400,bad:1};
+const VAC_DEFAULT={every:'24',gap:'1'}; // new tenant every 2 years, about 1 month to re-rent
 const REPL0=[['Roof',15000,20],['Furnace / boiler',8000,20],['Water heater',1800,12],['Windows',15000,25],['Masonry / tuckpointing',12000,30],['Porches',15000,25],['Plumbing / electrical',20000,40],['Appliances',4000,12]];
 const SAMPLES=[
  {n:'2-flat bought 2005',v:{units:2,occ:1,pi:1190,bal:110000,rate:5.9,tax:4200,ins:1700}},
@@ -280,6 +282,7 @@ let R=REPL0.map(r=>r.slice()), lookupAV=0, noSale=false, lookupLoan=null;
 function pmt(P,rate,yrs){const r=rate/100/12,n=yrs*12;if(P<=0||n<=0)return 0;if(r===0)return P/n;return P*r/(1-Math.pow(1+r,-n))}
 function balanceAfter(P,rate,yrs,months){const r=rate/100/12,n=yrs*12;if(months>=n)return 0;if(r===0)return P*(1-months/n);
  const p=pmt(P,rate,yrs),g=Math.pow(1+r,months);return Math.max(0,P*g-p*(g-1)/r)}
+function vacFrac(){const every=+$('vac_every').value,gap=+$('vac_gap').value;return Math.min(0.5,gap/every)} // empty months per tenant cycle
 function lookupTax(){const ex=val('occ')>=1?HOMEOWNER_EXEMPTION+($('senior').checked?SENIOR_EXEMPTION:0):0;return Math.round(Math.max(0,lookupAV*STATE_EQUALIZER-ex)*TAX_RATE)}
 function missing(){
  const m=[],u=val('units'),o=val('occ');
@@ -299,9 +302,10 @@ function compute(mult){ // mult: optional {i,f} to scale one replacement cost
  const m={ // whole-building monthly costs
   taxes:val('tax')/12, ins:val('ins')/12, hoa:val('hoa'),
   upkeep:(val('minor')+val('snow'))/12, repl:resYear.reduce((a,b)=>a+b,0)/12,
-  pay:val('hours')*val('wage'), funds:val('emerg')+val('plan')+val('legal')/12};
+  pay:val('hours')*val('wage'), funds:val('fund')+val('legal')/12};
  const base=Object.values(m).reduce((a,b)=>a+b,0);
- const loss=Math.min(0.9,(val('vac')+val('bad'))/100);
+ const vacF=vacFrac();                                // share of the time a unit sits empty
+ const loss=Math.min(0.9,vacF+val('bad')/100);
  // Utilities: skip ones tenants pay directly; the rest are shared by all units, or charged to rented units only.
  let utilAll=0,utilRented=0;
  UTIL.forEach(id=>{if($('tp-'+id).checked)return;const a=val(id);utilAll+=a;utilRented+=$('sh-'+id).value==='rented'?a:a*share});
@@ -310,9 +314,9 @@ function compute(mult){ // mult: optional {i,f} to scale one replacement cost
  const rentedTotal=(base+pi+loan2)*share+utilRented; // what the rented units cover together
  const rent=mort=>(per(base+mort+loan2)+utilRented/rented)/(1-loss); // rented share, split across rented units, plus cushion
  const rA=rent(pi);
- return {units,occ,rented,share,total,rentedTotal,pi,piInt,m,resYear,loss,rA,rB:piInt===null?null:rent(piInt),per,
+ return {vacF,units,occ,rented,share,total,rentedTotal,pi,piInt,m,resYear,loss,rA,rB:piInt===null?null:rent(piInt),per,
   lines:[['Principal and interest',per(pi)],['Property taxes',per(m.taxes)],['Homeowners insurance',per(m.ins)],...(mi>0?[['Mortgage insurance',per(mi)]]:[]),...(loan2-mi>0?[['Other loans',per(loan2-mi)]]:[]),...(m.hoa>0?[['HOA or condo dues',per(m.hoa)]]:[]),['Utilities',utilRented/rented],['Routine repairs and yard',per(m.upkeep)],
-   ['Savings for big replacements',per(m.repl)],['Your pay',per(m.pay)],['Emergency, planning, legal',per(m.funds)],['Vacancy and unpaid-rent cushion',rA*loss]]};
+   ['Savings for big replacements',per(m.repl)],['Your pay',per(m.pay)],['Emergency, planning, legal',per(m.funds)],['Savings for vacancies',rA*vacF],...(val('bad')>0?[['Unpaid-rent cushion',rA*val('bad')/100]]:[])]};
 }
 
 /* ===== RENDER ===== */
@@ -328,10 +332,13 @@ function calc(){
  if(miss.length){
   $('answer').classList.add('hide');$('missing').classList.remove('hide');
   $('missing').innerHTML='To see your minimum rent, fill in: '+miss.map(x=>`<b>${x}</b>`).join(', ')+'.';
-  $('mktOut').innerHTML='';$('wiOut').textContent='Fill in steps 1 and 2 first.';return}
+  $('mktOut').innerHTML='';$('wiOut').textContent='Fill in steps 1 and 2 first.';
+  $('vacOut').textContent=`A unit sitting empty ${Math.round(vacFrac()*100)}% of the time. We'll show how much to set aside once steps 1 and 2 are filled in.`;return}
  $('missing').classList.add('hide');$('answer').classList.remove('hide');
  const c=compute();
  $('outA').textContent=usd(c.rA);
+ {const every=+$('vac_every').value,gap=+$('vac_gap').value,set=c.rA*c.vacF,yrs=every/12,gapTxt=gap===0.5?'2 weeks':plural(gap,'month');
+  $('vacOut').innerHTML=`Set aside <b>${usd(set)} a month</b> per rented unit. Over ${yrs===1?'a year':yrs+' years'} that adds up to ${usd(set*every)}, enough to cover ${gapTxt} of lost rent between tenants. That's a unit sitting empty about ${Math.round(c.vacF*100)}% of the time.`}
  $('shareLine').innerHTML=c.occ>0
   ?`Your building costs <b>${usd(c.total)}</b> a month to run. Your ${plural(c.rented,'rented unit')} ${c.rented===1?'covers':'cover'} ${usd(c.rentedTotal)} of that (${c.rented} of ${c.units} shares of shared costs, plus any utilities charged to rented units only). The ${plural(c.occ,'unit')} you live in ${c.occ===1?'carries':'carry'} the other ${usd(c.total-c.rentedTotal)}, as your own housing cost.`
   :`Your building costs <b>${usd(c.total)}</b> a month to run, split across ${plural(c.rented,'rented unit')}.`;
@@ -346,7 +353,7 @@ function calc(){
  if(!(mk>0)){$('mktOut').innerHTML='';return}
  const gap=mk-c.rA;
  $('mktOut').innerHTML=`<div class="vs"><div><b>${usd(c.rA)}</b>Rent at cost</div><div class="mk"><b>${usd(mk)}</b>Typical rent nearby</div></div>`+(gap>0
-  ?`<p class="msg">Charging ${usd(c.rA)} already covers the mortgage, taxes, insurance, repairs, savings for every big replacement, emergency and planning funds, a vacancy cushion, and pays you ${usd(val('wage'))} an hour. Market rent would add ${usd(gap)} a month per unit (${usd(gap*12*c.rented)} a year across your ${plural(c.rented,'rented unit')}) on top of every real cost.</p>`
+  ?`<p class="msg">Charging ${usd(c.rA)} already covers the mortgage, taxes, insurance, repairs, savings for every big replacement, an emergency and planning fund, savings for vacancies, and pays you ${usd(val('wage'))} an hour. Market rent would add ${usd(gap)} a month per unit (${usd(gap*12*c.rented)} a year across your ${plural(c.rented,'rented unit')}) on top of every real cost.</p>`
   :`<p class="msg">Rents nearby are at or below what this building needs. Double-check your numbers; your costs may be higher than typical.</p>`);
 }
 function drawMortInfo(){ // estimated loan (from lookup) and this month's interest/principal split
@@ -375,6 +382,7 @@ function drawLinks(){
  $('czLinks').innerHTML=[['Craigslist','https://chicago.craigslist.org/search/apa?'+cl],['Zillow',`https://www.zillow.com/${area}/rentals/${beds}-_beds/`],['Apartments.com',`https://www.apartments.com/${area}/${bd}/`]]
   .map(([n,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">Search ${n} &#8599;</a>`).join('')}
 function reset(){
+ $('vac_every').value=VAC_DEFAULT.every;$('vac_gap').value=VAC_DEFAULT.gap;
  UTIL.forEach(id=>{$('tp-'+id).checked=!!UT_DEFAULT[id];$('sh-'+id).value='all'});syncUtil();
  ALL.forEach(id=>setF(id,TYPICAL[id]??'',TYPICAL[id]!==undefined?'typical':''));
  R=REPL0.map(r=>r.slice());drawRepl();lookupAV=0;noSale=false;lookupLoan=null;$('senior').checked=false;
@@ -389,7 +397,7 @@ ALL.forEach(id=>{const row=$(id).closest('.row'),x=document.createElement('div')
  $('tag-'+id).addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const open=x.classList.contains('hide');
   if(open){x.innerHTML=exText(id);x.classList.remove('hide')}else x.classList.add('hide');$('tag-'+id).setAttribute('aria-expanded',open)})});
 ALL.forEach(id=>$(id).addEventListener('input',()=>{$(id).dataset.src='';delete EXPL[id];closeEx(id);tag(id);if(id==='pi')noSale=false;calc()}));
-['mkt','cz_zip','cz_beds','cz_park','cz_laundry','cz_ac','senior','wi','wm'].forEach(id=>$(id).addEventListener('input',calc));
+['vac_every','vac_gap','mkt','cz_zip','cz_beds','cz_park','cz_laundry','cz_ac','senior','wi','wm'].forEach(id=>$(id).addEventListener('input',calc));
 $('reset').onclick=()=>{reset();window.scrollTo({top:0,behavior:'smooth'})};
 $('print').onclick=()=>window.print();
 $('samples').innerHTML=SAMPLES.map((s,i)=>`<button class="linkish" data-s="${i}">${s.n}</button>`).join(' · ');
