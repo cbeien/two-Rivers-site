@@ -5,301 +5,285 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Chicago Small Landlord Minimum Rent Calculator</title>
 <style>
-:root{--bg:#fbfaf7;--card:#fff;--ink:#1d2421;--mute:#5d6862;--line:#d9ddd6;--acc:#0f6b5a;--acc2:#b4872c;--warn:#b5482f;--c1:#0f6b5a;--c2:#2f8f7b;--c3:#b4872c;--c4:#6b7fa3;--c5:#8a5a7a;--c6:#c26d4b;--c7:#9aa39d}
-@media(prefers-color-scheme:dark){:root{--bg:#121715;--card:#1b2220;--ink:#eef2ef;--mute:#a3aea8;--line:#34403c;--acc:#5cc7ad;--acc2:#e0b455;--warn:#ee8a6f}}
+:root{--bg:#fbfaf7;--card:#fff;--ink:#1d2421;--mute:#5d6862;--line:#d9ddd6;--acc:#0f6b5a;--acc2:#b4872c;--warn:#b5482f;--soft:#eef4f1}
+@media(prefers-color-scheme:dark){:root{--bg:#121715;--card:#1b2220;--ink:#eef2ef;--mute:#a3aea8;--line:#34403c;--acc:#5cc7ad;--acc2:#e0b455;--warn:#ee8a6f;--soft:#1f2b27}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:18px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-main{max-width:1100px;margin:0 auto;padding:24px 20px 60px}
-h1{font-size:clamp(26px,4vw,38px);margin:0 0 6px;line-height:1.15}
-h2{font-size:22px;margin:0 0 10px}
-.sub{color:var(--mute);margin:0 0 18px;max-width:70ch}
-.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin:16px 0}
-.tabs{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap}
-button,.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 16px;border-radius:8px;cursor:pointer;text-decoration:none;display:inline-block}
-button[aria-selected=true],button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
-@media(prefers-color-scheme:dark){button[aria-selected=true],button.pri{color:#0b1210}}
-:focus-visible{outline:3px solid var(--acc2);outline-offset:2px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
-label{display:block;font-size:15px;color:var(--mute)}
-label b{display:block;color:var(--ink);font-weight:600;font-size:16px}
-label.chk{display:flex;gap:8px;align-items:center;color:var(--ink);font-size:16px}
-label.chk input{width:auto}
-input,select{width:100%;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
-input[type=range]{padding:0}
-.tag{font-size:12px;border:1px solid var(--line);border-radius:10px;padding:0 7px;margin-left:6px;color:var(--mute);font-weight:400}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:clamp(26px,4vw,34px);margin:0 0 6px;line-height:1.2}
+.lead{color:var(--mute);margin:0 0 20px}
+.step{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin:14px 0}
+.step h2{font-size:19px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+.step h2 .n{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--acc);color:#fff;font-size:15px;flex:none}
+@media(prefers-color-scheme:dark){.step h2 .n{color:#0b1210}}
+.step>p.hint{color:var(--mute);margin:0 0 8px;font-size:15px}
+.row{display:grid;grid-template-columns:1fr 190px;gap:6px 16px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.row:first-of-type{border-top:0}
+.row label{font-weight:600}
+.row small{display:block;font-weight:400;color:var(--mute);font-size:14px}
+.box{display:flex;align-items:center;border:1px solid var(--line);border-radius:6px;background:var(--bg);overflow:hidden}
+.box:focus-within{outline:3px solid var(--acc2);outline-offset:1px}
+.box span{padding:0 9px;color:var(--mute);font-size:15px;white-space:nowrap}
+.box input{border:0;outline:0;background:transparent;color:var(--ink);font:inherit;padding:8px;width:100%;min-width:0;text-align:right}
+.tag{display:inline-block;font-size:12px;font-weight:400;border:1px solid var(--line);border-radius:10px;padding:0 7px;margin-left:6px;color:var(--mute)}
+.tag:empty{display:none}
 .tag.rec{border-color:var(--acc);color:var(--acc)}
-.big{font-size:clamp(34px,6vw,60px);font-weight:700;line-height:1;color:var(--acc)}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media(max-width:700px){.two{grid-template-columns:1fr}}
-.bar{display:flex;height:44px;border-radius:6px;overflow:hidden;margin:10px 0}
-.bar div{min-width:2px}
-.leg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:15px}
-.leg i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px}
-table{border-collapse:collapse;width:100%;font-size:16px}
-td,th{padding:6px;border-bottom:1px solid var(--line);text-align:left}
-td input{max-width:130px}
-.msg{padding:10px 14px;border-left:4px solid var(--acc2);background:var(--bg);margin:10px 0}
+@media(max-width:560px){.row{grid-template-columns:1fr}}
+button,.btn{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 16px;border-radius:8px;cursor:pointer;text-decoration:none;display:inline-block}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+@media(prefers-color-scheme:dark){button.pri{color:#0b1210}}
+.linkish{border:0;background:none;padding:0;color:var(--acc);text-decoration:underline;cursor:pointer;font-size:15px}
+:focus-visible{outline:3px solid var(--acc2);outline-offset:2px}
+.lookup{background:var(--soft);border-radius:8px;padding:12px 14px;margin:6px 0 10px}
+.lookup .line{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.lookup input{flex:1;min-width:220px;font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.msg{padding:10px 14px;border-left:4px solid var(--acc2);background:var(--bg);margin:10px 0;font-size:15px}
 .msg.warn{border-left-color:var(--warn)}
-.msg.warn input{max-width:200px}
-.hide{display:none}
-.links{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.chk{display:flex;gap:8px;align-items:center;font-size:16px}
+.chk input{width:auto}
+.hide{display:none!important}
+table{border-collapse:collapse;width:100%;font-size:16px}
+td,th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:14px;color:var(--mute);font-weight:600}
+td.num,th.num{text-align:right;white-space:nowrap}
+.rt .box{max-width:130px;margin-left:auto}
+.result{border:2px solid var(--acc)}
+.big{font-size:clamp(40px,8vw,64px);font-weight:700;line-height:1.05;color:var(--acc);margin:6px 0 2px}
+.receipt td{border-bottom:1px dashed var(--line)}
+.receipt tr.total td{border-top:2px solid var(--ink);border-bottom:0;font-weight:700;font-size:18px}
 .vs{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
-.vs .big{font-size:clamp(28px,5vw,46px)}
-.vs .mk{color:var(--mute)}
-footer{color:var(--mute);font-size:14px;margin-top:30px}
-@media print{.tabs,.noprint,details{display:none!important}body{background:#fff;color:#000}.card{break-inside:avoid}}
+.vs b{display:block;font-size:clamp(26px,5vw,40px);line-height:1.1;color:var(--acc)}
+.vs .mk b{color:var(--mute)}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+details{margin:14px 0}
+footer{color:var(--mute);font-size:14px;margin-top:24px}
+@media print{.noprint,.lookup,details{display:none!important}body{background:#fff;color:#000}.step{break-inside:avoid}}
 </style>
 </head>
 <body>
 <main>
 <h1>What rent does your building actually need?</h1>
-<p class="sub">The minimum rent covers the real costs of owning a small building: the mortgage, taxes, repairs, reserves for the future, and fair pay for your own work. It is a floor, not a ceiling, and not advice on what to charge.</p>
-<div class="tabs noprint" role="tablist">
-  <button role="tab" id="t1" aria-selected="true">Calculator</button>
-  <button role="tab" id="t2" aria-selected="false">Look up an address</button>
-  <span style="flex:1"></span>
-  <button id="reset">Reset</button><button id="print">Print / save as PDF</button>
-</div>
+<p class="lead">Work down the page. The minimum rent at the bottom covers every real cost of owning your building, including fair pay for your own time. It updates as you type.</p>
 
-<section id="intro" class="card">
-  <h2>First, tell us about your building</h2>
-  <p class="sub">Seven quick questions. We will not show any numbers until you answer. You can change everything afterwards.</p>
-  <div class="grid">
-    <label><b>How many units does the building have?</b><input id="q_units" type="number" min="1" max="6" placeholder="2"></label>
-    <label><b>How many of those units do you live in?</b><input id="q_occ" type="number" min="0" max="5" placeholder="1"></label>
-    <label><b>Monthly mortgage payment ($)</b><input id="q_pi" type="number" min="0" placeholder="Enter 0 if paid off"><small>Principal and interest only, not taxes.</small></label>
-    <label><b>Property taxes per year ($)</b><input id="q_tax" type="number" min="0" placeholder="From your tax bill"></label>
-    <label><b>Insurance per year ($)</b><input id="q_ins" type="number" min="0" placeholder="From your policy"></label>
-    <label><b>Loan balance today ($), optional</b><input id="q_loan" type="number" min="0"><small>What you still owe. Lets us also show the interest-only view.</small></label>
-    <label><b>Interest rate (%), optional</b><input id="q_rate" type="number" min="0" step="any"></label>
+<!-- STEP 1 -->
+<section class="step">
+  <h2><span class="n">1</span>Your building</h2>
+  <div class="lookup noprint">
+    <b>Shortcut for Chicago addresses:</b> fill in the building, an estimated mortgage, and estimated taxes from Cook County records. You can change anything after.
+    <div class="line">
+      <input id="addr" placeholder="e.g. 1234 N Example Ave" aria-label="Street address">
+      <button class="pri" id="go">Look up</button>
+    </div>
+    <div id="lmsg"></div>
+    <div style="margin-top:6px;font-size:15px">Or try a hypothetical example: <span id="samples"></span></div>
   </div>
-  <p id="qerr" class="msg hide" role="alert"></p>
-  <button class="pri" id="qgo" style="margin-top:12px">Show my minimum rent</button>
+  <div class="row"><label for="units">Units in the building<span class="tag" id="tag-units"></span><small>1 to 6</small></label><div class="box"><input id="units" inputmode="numeric" autocomplete="off"><span>units</span></div></div>
+  <div class="row"><label for="occ">Units you live in<span class="tag" id="tag-occ"></span><small>0 if you don't live there. Your own unit doesn't need to earn rent.</small></label><div class="box"><input id="occ" inputmode="numeric" autocomplete="off"><span>units</span></div></div>
 </section>
 
-<section id="lookup" class="card hide">
-  <h2>Look up a Chicago address</h2>
-  <p class="sub">We pull the sale price, sale date, and assessed value from Cook County public records, then estimate the loan and taxes. Everything stays editable.</p>
-  <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <input id="addr" style="flex:1;min-width:240px" placeholder="e.g. 1234 N Example Ave" aria-label="Street address">
-    <button class="pri" id="go">Look up</button>
-  </div>
-  <div class="grid" style="margin-top:10px">
-    <label><b>Units you live in</b><input id="lk_occ" type="number" min="0" max="5" placeholder="1"></label>
-    <label><b>Units in building, optional</b><input id="lk_units" type="number" min="1" max="6" placeholder="From county records"><small>Leave blank and we will use Cook County's count.</small></label>
-    <label><b>Assumed down payment (%)</b><input id="down" type="number" value="20"></label>
-  </div>
-  <label class="chk" style="margin-top:10px"><input type="checkbox" id="lk_senior"> I live here and I am 65 or older (senior exemption)</label>
-  <div id="lmsg"></div>
-  <p class="noprint" style="margin-bottom:4px">Or start from a hypothetical example:</p>
-  <div class="noprint" id="samples" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+<!-- STEP 2 -->
+<section class="step">
+  <h2><span class="n">2</span>Mortgage</h2>
+  <div id="mortWarn" class="msg warn hide" role="alert"><b>No usable sale record was found, so we assumed the building is paid off.</b> <span id="mortWarnWhy"></span> If you have a mortgage, enter your payment below.</div>
+  <div class="row"><label for="pi">Monthly mortgage payment<span class="tag" id="tag-pi"></span><small>Principal and interest only. Enter 0 if it's paid off.</small></label><div class="box"><span>$</span><input id="pi" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="bal">Loan balance today, optional<span class="tag" id="tag-bal"></span><small>What you still owe. With the rate, shows an interest-only view.</small></label><div class="box"><span>$</span><input id="bal" inputmode="decimal" autocomplete="off"></div></div>
+  <div class="row"><label for="rate">Interest rate, optional<span class="tag" id="tag-rate"></span></label><div class="box"><input id="rate" inputmode="decimal" autocomplete="off"><span>%</span></div></div>
 </section>
 
-<section class="card gated hide" id="results">
-  <h2>What each rented unit needs to bring in</h2>
-  <div id="mortWarn" class="msg warn hide" role="alert">
-    <b>No usable sale record was found, so we assumed the building is paid off.</b>
-    <div id="mortWarnWhy"></div>
-    <label style="margin-top:8px"><b>If you have a mortgage, enter your monthly payment ($)</b><input id="mw_pi" type="number" min="0" placeholder="e.g. 1800"></label>
-  </div>
-  <div class="two">
-    <div><div class="big" id="outA">$0</div><div>per month, per rented unit, to cover every cost of owning this building, including pay for your time.</div></div>
-    <div class="msg"><b id="outB">&nbsp;</b><div>The other view: if you count only the interest and treat the principal as your own savings.</div></div>
-  </div>
-  <p id="shareLine" style="margin-top:14px"></p>
-  <p id="method" class="sub" style="margin-top:6px"></p>
+<!-- STEP 3 -->
+<section class="step">
+  <h2><span class="n">3</span>Taxes and insurance</h2>
+  <div class="row"><label for="tax">Property taxes<span class="tag" id="tag-tax"></span><small>From your tax bill if you have it.</small></label><div class="box"><span>$</span><input id="tax" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
+  <div class="row hide" id="seniorRow"><label class="chk" style="font-weight:400"><input type="checkbox" id="senior"> I'm 65 or older (adds the senior exemption to the estimate)</label></div>
+  <div class="row"><label for="ins">Insurance<span class="tag" id="tag-ins"></span><small>From your policy. A rough guess is fine.</small></label><div class="box"><span>$</span><input id="ins" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
 </section>
 
-<section class="card gated hide" id="comps">
-  <h2>What are similar apartments renting for nearby?</h2>
-  <p class="sub">Open a listing site with the search already set up, look at a few comparable apartments, and type a typical rent below.</p>
-  <div class="grid">
-    <label><b>ZIP code</b><input id="cz_zip" inputmode="numeric" maxlength="5" placeholder="e.g. 60647"></label>
-    <label><b>Bedrooms per rented unit</b><input id="cz_beds" type="number" min="0" max="6" value="2"></label>
+<!-- STEP 4 -->
+<section class="step">
+  <h2><span class="n">4</span>Utilities you pay</h2>
+  <p class="hint">Only what you pay as the owner, not what tenants pay. Typical amounts are filled in.</p>
+  <div class="row"><label for="heat">Heat<span class="tag" id="tag-heat"></span></label><div class="box"><span>$</span><input id="heat" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="water">Water and sewer<span class="tag" id="tag-water"></span></label><div class="box"><span>$</span><input id="water" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="elec">Common-area electric<span class="tag" id="tag-elec"></span></label><div class="box"><span>$</span><input id="elec" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="garb">Garbage<span class="tag" id="tag-garb"></span></label><div class="box"><span>$</span><input id="garb" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+</section>
+
+<!-- STEP 5 -->
+<section class="step">
+  <h2><span class="n">5</span>Repairs and replacements</h2>
+  <div class="row"><label for="minor">Routine repairs<span class="tag" id="tag-minor"></span><small>Leaky faucets, broken locks, small fixes.</small></label><div class="box"><span>$</span><input id="minor" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
+  <div class="row"><label for="snow">Snow and yard care<span class="tag" id="tag-snow"></span></label><div class="box"><span>$</span><input id="snow" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
+  <p class="hint" style="margin:14px 0 4px"><b>Big replacements.</b> Set money aside each month so the roof or furnace is paid for when it goes. Cost divided by years it lasts.</p>
+  <table class="rt"><thead><tr><th>Item</th><th class="num">Cost</th><th class="num">Lasts</th><th class="num">Per month</th></tr></thead><tbody id="rt"></tbody></table>
+</section>
+
+<!-- STEP 6 -->
+<section class="step">
+  <h2><span class="n">6</span>Your time and savings</h2>
+  <div class="row"><label for="hours">Hours you spend managing<span class="tag" id="tag-hours"></span><small>Showings, repairs, paperwork, rent collection.</small></label><div class="box"><input id="hours" inputmode="decimal" autocomplete="off"><span>hrs/mo</span></div></div>
+  <div class="row"><label for="wage">Your pay for that time<span class="tag" id="tag-wage"></span><small>Pay yourself what your time is worth.</small></label><div class="box"><span>$</span><input id="wage" inputmode="decimal" autocomplete="off"><span>/hr</span></div></div>
+  <div class="row"><label for="emerg">Emergency fund<span class="tag" id="tag-emerg"></span></label><div class="box"><span>$</span><input id="emerg" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="plan">Planning fund<span class="tag" id="tag-plan"></span><small>Future upgrades and surprises.</small></label><div class="box"><span>$</span><input id="plan" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
+  <div class="row"><label for="legal">Legal, accounting, licenses<span class="tag" id="tag-legal"></span></label><div class="box"><span>$</span><input id="legal" inputmode="decimal" autocomplete="off"><span>/yr</span></div></div>
+  <div class="row"><label for="vac">Vacancy and turnover<span class="tag" id="tag-vac"></span><small>Share of the year a unit sits empty between tenants.</small></label><div class="box"><input id="vac" inputmode="decimal" autocomplete="off"><span>% of rent</span></div></div>
+  <div class="row"><label for="bad">Unpaid rent<span class="tag" id="tag-bad"></span></label><div class="box"><input id="bad" inputmode="decimal" autocomplete="off"><span>% of rent</span></div></div>
+</section>
+
+<!-- RESULT -->
+<section class="step result" id="result">
+  <h2>Your minimum rent</h2>
+  <div id="missing" class="msg"></div>
+  <div id="answer" class="hide">
+    <div class="big" id="outA">$0</div>
+    <div>per month, for each rented unit</div>
+    <p id="shareLine"></p>
+    <table class="receipt"><tbody id="receipt"></tbody></table>
+    <p id="scary" style="margin-top:12px"></p>
+    <p id="outB" class="msg hide"></p>
   </div>
-  <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:10px">
+</section>
+
+<!-- COMPARE -->
+<section class="step" id="compare">
+  <h2>Compare with rents nearby</h2>
+  <p class="hint">Open a listing site with the search set up, look at a few similar apartments, and type a typical rent.</p>
+  <div class="row"><label for="cz_zip">ZIP code</label><div class="box"><input id="cz_zip" inputmode="numeric" maxlength="5" autocomplete="off"></div></div>
+  <div class="row"><label for="cz_beds">Bedrooms per rented unit</label><div class="box"><input id="cz_beds" inputmode="numeric" value="2" autocomplete="off"><span>beds</span></div></div>
+  <div style="display:flex;gap:18px;flex-wrap:wrap;padding:8px 0">
     <label class="chk"><input type="checkbox" id="cz_park"> Parking</label>
     <label class="chk"><input type="checkbox" id="cz_laundry"> Washer/dryer in unit</label>
     <label class="chk"><input type="checkbox" id="cz_ac"> Air conditioning</label>
   </div>
   <div class="links noprint" id="czLinks"></div>
-  <p class="sub" style="font-size:15px;margin:0">Craigslist opens with all of these filters set. Zillow and Apartments.com open with the ZIP code and bedrooms set; add the other filters on the site.</p>
-  <label style="max-width:320px;margin-top:14px"><b>Typical rent you see nearby ($/month)</b><input id="mkt" type="number" min="0" placeholder="e.g. 2200"></label>
+  <p class="hint" style="font-size:14px">Craigslist opens with all of these filters. Zillow and Apartments.com open with ZIP and bedrooms; add the rest on the site.</p>
+  <div class="row"><label for="mkt">Typical rent nearby</label><div class="box"><span>$</span><input id="mkt" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
   <div id="mktOut"></div>
 </section>
 
-<section class="card gated hide">
-  <h2>Scary vs. real</h2>
-  <div class="big" id="share">0%</div>
-  <div>of the minimum rent is the mortgage and property taxes. Everything else, including the big replacements owners worry about, is the rest.</div>
-  <div class="bar" id="bar2" role="img" aria-label="Mortgage and taxes versus everything else"></div>
-  <div class="leg" id="leg2"></div>
-  <h2 style="margin-top:20px">Each big replacement, per rented unit per month</h2>
-  <div id="repl"></div>
-  <h2 style="margin-top:20px">What if one costs more?</h2>
-  <div class="grid">
-    <label><b>Which one?</b><select id="wi"></select></label>
-    <label><b>Cost multiplier: <span id="wiV">2</span>x</b><input id="wm" type="range" min="1" max="4" step="0.5" value="2"></label>
-  </div>
+<!-- WHAT IF -->
+<section class="step noprint">
+  <h2>What if a big replacement costs more?</h2>
+  <div class="row"><label for="wi">Which one</label><select id="wi" style="font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)"></select></div>
+  <div class="row"><label for="wm">Costs <span id="wiV">2</span>x as much</label><input id="wm" type="range" min="1" max="4" step="0.5" value="2"></div>
   <p id="wiOut" class="msg"></p>
 </section>
 
-<section class="card gated hide">
-  <h2>Full breakdown</h2>
-  <div class="bar" id="bar1" role="img" aria-label="Breakdown of minimum rent"></div>
-  <div class="leg" id="leg1"></div>
-  <p id="fixvar" class="sub" style="margin-top:10px"></p>
-</section>
+<div class="actions noprint"><button id="print">Print / save as PDF</button><button id="reset">Start over</button></div>
 
-<section class="card gated hide" id="inputs">
-  <h2>Your numbers</h2>
-  <p class="sub">Every field is a rough starting point. Change anything. Tags show where each number came from.</p>
-  <div id="fields"></div>
-  <h2 style="margin-top:20px">Big replacements</h2>
-  <table><thead><tr><th>Item</th><th>Cost ($)</th><th>Lasts (years)</th><th>Per year</th></tr></thead><tbody id="rt"></tbody></table>
-</section>
+<details><summary><b>How this works</b></summary>
+<p>Add up what the whole building costs each month: mortgage, taxes, insurance, utilities you pay, repairs, savings for big replacements, pay for your time, and savings funds. The rented units cover their share of that total. In a 2-flat where you live in one unit, the rented unit covers half. In a 3-flat where you live in one, the two rented units cover two thirds between them. The unit you live in carries the rest, as your own housing cost. A cushion for vacancy and unpaid rent is added on top.</p>
+<p>The interest-only view counts just the interest part of the mortgage, based on what you still owe today. The principal part is money you keep, as equity in the building.</p>
+<p>Address lookups estimate taxes as assessed value x state equalizer, minus the homeowner exemption if you live there ($10,000, plus $8,000 more if you are 65 or older), x the tax rate. The mortgage estimate assumes 20% down and the average 30-year rate in the year of the last sale. Your real numbers are better if you have them.</p></details>
 
-<details class="card"><summary><b>How this works</b></summary>
-<p>Add up what it costs to run the building each month: mortgage, taxes, insurance, utilities you pay, repairs, savings for big replacements (cost divided by years it lasts), pay for your time, and reserves for emergencies. The rented units cover their share of that total: in a 2-flat where you live in one unit, the rented unit covers half; in a 3-flat where you live in one, the two rented units cover two thirds between them. The unit you live in carries the rest, as your own housing cost. A cushion for vacancy and unpaid rent is added on top as a percentage of rent.</p>
-<p>The interest-only view counts just the interest part of the mortgage payment, based on what you still owe today. The principal part is money you keep, as equity in the building.</p>
-<p>Address lookups estimate taxes as assessed value x state equalizer, minus the homeowner exemption if you live there ($10,000, plus $8,000 more if you are 65 or older), x the tax rate. Your real bill is better if you have it.</p></details>
-
-<footer>
-Educational tool, not financial, legal, or tax advice. Estimates only. Data: Cook County Open Data (Assessor) and Freddie Mac Primary Mortgage Market Survey (annual averages of the 30-year fixed rate). Chicago RLTO rules are not modeled. Nothing you enter leaves your browser; only the address lookup is sent to Cook County. No tracking, accounts, or storage.
-</footer>
+<footer>Educational tool, not financial, legal, or tax advice. Estimates only. Data: Cook County Open Data (Assessor) and Freddie Mac Primary Mortgage Market Survey. Chicago RLTO rules are not modeled. Nothing you enter leaves your browser; only an address lookup is sent to Cook County. No tracking, accounts, or storage.</footer>
 </main>
 
 <script>
 /* ===== ASSUMPTIONS (edit here) ===== */
 const OWNER_HOURLY_WAGE = 50;       // $/hr the owner pays themselves; presenter sets this.
 const STATE_EQUALIZER = 3.0163;     // Illinois equalizer, tax year 2024. Update yearly.
-const TAX_RATE = 0.067;             // Rough Chicago combined rate (~6.7%). Rough; check the Treasurer bill.
-const HOMEOWNER_EXEMPTION = 10000;  // Cook County homeowner exemption: $ off equalized assessed value, owner-occupied.
+const TAX_RATE = 0.067;             // Rough Chicago combined rate (~6.7%). Check the Treasurer bill.
+const HOMEOWNER_EXEMPTION = 10000;  // Cook County homeowner exemption ($ off equalized assessed value), owner-occupied.
 const SENIOR_EXEMPTION = 8000;      // Cook County senior exemption (65+), on top of the homeowner exemption.
+const DOWN_PAYMENT = 0.20;          // Assumed down payment when estimating a loan from a sale price.
 const API = 'https://datacatalog.cookcountyil.gov/resource/';
 const DS = {addr:'3723-97qp', sales:'wvhk-k5uv', values:'uzyt-m557', chars:'x54s-btds'}; // Parcel Addresses, Parcel Sales, Assessed Values, Building Characteristics.
-const APTS = {None:1, Two:2, Three:3, Four:4, Five:5, Six:6}; // char_apts words -> units. "None" = single-family home.
-/* Freddie Mac PMMS 30-yr fixed, ANNUAL averages (%). Sales in a year not listed use the latest year.
-   https://www.freddiemac.com/pmms . Add a year by appending a pair. 2025 is approximate (about 6.6%). */
+const APTS = {None:1, Two:2, Three:3, Four:4, Five:5, Six:6}; // char_apts -> units. "None" = single-family home.
+/* Freddie Mac PMMS 30-yr fixed, ANNUAL averages (%). Years not listed use the nearest listed year. 2025 is approximate. */
 const RATES={1990:10.13,1991:9.25,1992:8.39,1993:7.31,1994:8.38,1995:7.93,1996:7.81,1997:7.60,1998:6.94,1999:7.44,2000:8.05,2001:6.97,2002:6.54,2003:5.83,2004:5.84,2005:5.87,2006:6.41,2007:6.34,2008:6.03,2009:5.04,2010:4.69,2011:4.45,2012:3.66,2013:3.98,2014:4.17,2015:3.85,2016:3.65,2017:3.99,2018:4.54,2019:3.94,2020:3.11,2021:2.96,2022:5.34,2023:6.81,2024:6.72,2025:6.60};
-/* Rough benchmark defaults, rounded on purpose. */
-const BENCH={units:2,occ:1,sqft:2400,year:1920,loan:300000,rate:6.5,term:30,pi:'',escrow:0,tax:5000,ins:2000,heat:150,elec:40,water:120,garb:30,minor:1800,snow:300,hours:10,wage:OWNER_HOURLY_WAGE,vac:5,bad:1,legal:400,emerg:50,plan:50};
+/* Typical starting values for the steps people rarely know offhand. Rounded on purpose. */
+const TYPICAL={heat:150,water:120,elec:40,garb:30,minor:1800,snow:300,hours:10,wage:OWNER_HOURLY_WAGE,emerg:50,plan:50,legal:400,vac:5,bad:1};
 const REPL0=[['Roof',15000,20],['Furnace / boiler',8000,20],['Water heater',1800,12],['Windows',15000,25],['Masonry / tuckpointing',12000,30],['Porches',15000,25],['Plumbing / electrical',20000,40],['Appliances',4000,12]];
 const SAMPLES=[
- {n:'Hypothetical 2-flat, bought 2005',v:{units:2,occ:1,loan:200000,rate:5.9,tax:4200,ins:1700}},
- {n:'Hypothetical 2-flat, bought 2023',v:{units:2,occ:1,loan:380000,rate:6.8,tax:6200,ins:2400}},
- {n:'Hypothetical 3-flat, owner lives in one',v:{units:3,occ:1,sqft:3300,loan:420000,rate:6.5,tax:7000,ins:3000}},
- {n:'Hypothetical 2-flat, mortgage paid off',v:{units:2,occ:1,loan:0,tax:4800,ins:1900}}];
-const FIELDS=[
- ['Building',[['units','Units in building','1 to 6'],['occ','Units you live in','Your own unit does not need to earn rent.'],['sqft','Square feet'],['year','Year built']]],
- ['Mortgage',[['loan','Loan balance today ($)','What you still owe. Enter 0 if no mortgage.'],['rate','Interest rate (%)'],['term','Term (years)'],['pi','Monthly payment ($)','Principal and interest. Leave blank to calculate from the balance. Use your real number if you know it.'],['escrow','Monthly escrow ($)','Only if not already counted in taxes/insurance below.']]],
- ['Taxes and insurance (per year)',[['tax','Property taxes ($/yr)','From your tax bill if you have it.'],['ins','Insurance ($/yr)']]],
- ['Utilities you pay (per month)',[['heat','Heat'],['elec','Common electric'],['water','Water / sewer'],['garb','Garbage']]],
- ['Routine upkeep (per year)',[['minor','Minor repairs ($/yr)'],['snow','Snow / landscaping ($/yr)']]],
- ['Your time',[['hours','Hours per month managing'],['wage','Your pay for managing this building ($/hr)','Set by the presenter. Pay yourself what your time is worth.']]],
- ['Other',[['vac','Vacancy / turnover (% of rent)'],['bad','Unpaid rent allowance (% of rent)'],['legal','Legal / accounting / licensing ($/yr)'],['emerg','Emergency fund ($/month)'],['plan','Planning fund ($/month)']]]];
-/* ===== STATE ===== */
-const S={}, SRC={}; let R=REPL0.map(r=>r.slice());
-let revealed=false, noSale=false;
+ {n:'2-flat bought 2005',v:{units:2,occ:1,pi:1190,bal:110000,rate:5.9,tax:4200,ins:1700}},
+ {n:'2-flat bought 2023',v:{units:2,occ:1,pi:2480,bal:370000,rate:6.8,tax:6200,ins:2400}},
+ {n:'3-flat, owner in one',v:{units:3,occ:1,pi:2650,bal:410000,rate:6.5,tax:7000,ins:3000}},
+ {n:'2-flat, paid off',v:{units:2,occ:1,pi:0,tax:4800,ins:1900}}];
+const ALL=['units','occ','pi','bal','rate','tax','ins',...Object.keys(TYPICAL)];
+
+/* ===== HELPERS ===== */
 const $=id=>document.getElementById(id);
 const usd=n=>(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString('en-US');
-const num=id=>{const v=parseFloat(S[id]);return isFinite(v)&&v>=0?v:0};
-const pct=(a,b)=>b>0?Math.round(a/b*100):0;
-function setVal(id,v,src){S[id]=v;SRC[id]=src;const e=$('f_'+id);if(e)e.value=v;tag(id)}
-function tag(id){const t=$('tag_'+id);if(t){t.textContent=!SRC[id]?'':SRC[id]==='record'?'Cook County record':SRC[id]==='user'?'your input':'estimate';t.className='tag'+(SRC[id]==='record'?' rec':'')}}
-function reset(){Object.keys(BENCH).forEach(k=>setVal(k,BENCH[k],'est'));['units','occ','loan','rate','pi','tax','ins'].forEach(k=>setVal(k,'',''));
- R=REPL0.map(r=>r.slice());drawRepl();noSale=false;$('mw_pi').value='';calc();revealed=false;
- document.querySelectorAll('.gated').forEach(e=>e.classList.add('hide'));
- ['q_units','q_occ','q_pi','q_tax','q_ins','q_loan','q_rate'].forEach(i=>$(i).value='');
- $('intro').classList.remove('hide');$('qerr').classList.add('hide')}
-function reveal(){revealed=true;$('intro').classList.add('hide');document.querySelectorAll('.gated').forEach(e=>e.classList.remove('hide'));calc();$('results').scrollIntoView({behavior:'smooth'})}
-$('qgo').onclick=()=>{
- const g=i=>$(i).value.trim(),n=i=>parseFloat(g(i));
- const u=n('q_units'),o=n('q_occ'),err=$('qerr');
- let m='';
- if(!(u>=1&&u<=6))m='Enter how many units the building has (1 to 6).';
- else if(!(o>=0&&o<u))m='Enter how many units you live in. It must be fewer than the total, so at least one unit is rented.';
- else if(g('q_pi')===''||n('q_pi')<0)m='Enter your monthly mortgage payment, or 0 if it is paid off.';
- else if(g('q_tax')===''||n('q_tax')<0)m='Enter your yearly property taxes.';
- else if(g('q_ins')===''||n('q_ins')<0)m='Enter your yearly insurance cost. A rough guess is fine.';
- if(m){err.textContent=m;err.classList.remove('hide');return}
- setVal('units',u,'user');setVal('occ',o,'user');setVal('pi',n('q_pi'),'user');setVal('tax',n('q_tax'),'user');setVal('ins',n('q_ins'),'user');
- if(g('q_loan')!=='')setVal('loan',n('q_loan'),'user');
- if(g('q_rate')!=='')setVal('rate',n('q_rate'),'user');
- reveal()};
-/* ===== BUILD INPUTS ===== */
-$('fields').innerHTML=FIELDS.map(([g,fs])=>`<h3>${g}</h3><div class="grid">`+fs.map(([id,l,h])=>`<label title="${h||''}"><b>${l}<span class="tag" id="tag_${id}"></span></b><input id="f_${id}" type="number" min="0" step="any" aria-label="${l}">${h?`<small>${h}</small>`:''}</label>`).join('')+'</div>').join('');
-FIELDS.forEach(([,fs])=>fs.forEach(([id])=>$('f_'+id).addEventListener('input',e=>{S[id]=e.target.value;SRC[id]='user';tag(id);if(id==='pi')$('mw_pi').value=e.target.value;calc()})));
-$('mw_pi').addEventListener('input',e=>{setVal('pi',e.target.value===''?0:e.target.value,'user');calc()});
-function drawRepl(){$('rt').innerHTML=R.map((r,i)=>`<tr><td>${r[0]}</td><td><input type="number" min="0" value="${r[1]}" data-i="${i}" data-k="1" aria-label="${r[0]} cost"></td><td><input type="number" min="1" value="${r[2]}" data-i="${i}" data-k="2" aria-label="${r[0]} lifespan"></td><td id="ry${i}"></td></tr>`).join('');
- $('rt').querySelectorAll('input').forEach(e=>e.addEventListener('input',()=>{R[e.dataset.i][e.dataset.k]=parseFloat(e.value)||0;calc()}));
- $('wi').innerHTML=R.map((r,i)=>`<option value="${i}">${r[0]}</option>`).join('')}
-/* ===== MATH (every step explained) ===== */
-function pmt(P,rate,yrs){ // standard loan payment formula
- const r=rate/100/12,n=yrs*12; if(P<=0||n<=0)return 0; if(r===0)return P/n; return P*r/(1-Math.pow(1+r,-n))}
-function balanceAfter(P,rate,yrs,months){ // what is still owed after a number of monthly payments
- const r=rate/100/12,n=yrs*12; if(months>=n)return 0; if(r===0)return P*(1-months/n);
- const p=pmt(P,rate,yrs),g=Math.pow(1+r,months); return Math.max(0,P*g-p*(g-1)/r)}
-function compute(mult){ // mult: optional {i, f} for the what-if slider
- const units=Math.max(1,num('units')),occ=Math.min(num('occ'),units-1),rented=units-occ;
- const loan=num('loan');
- const piFull=(S.pi!==''&&S.pi!==undefined&&parseFloat(S.pi)>=0)?parseFloat(S.pi):pmt(loan,num('rate'),num('term')||30);
- const piInt=Math.min(piFull,loan*num('rate')/100/12);   // interest on what is owed today, capped at the full payment
- const resYear=R.map((r,i)=>{const c=(mult&&mult.i==i)?r[1]*mult.f:r[1];return r[2]>0?c/r[2]:0});
- const m={ // monthly cost buckets for the whole building
-  taxes:(num('tax')+num('ins'))/12+num('escrow'),
-  utilities:num('heat')+num('elec')+num('water')+num('garb'),
-  upkeep:(num('minor')+num('snow'))/12,
-  repl:resYear.reduce((a,b)=>a+b,0)/12,
-  pay:num('hours')*num('wage'),
-  reserves:num('legal')/12+num('emerg')+num('plan')};
- const baseNoMort=Object.values(m).reduce((a,b)=>a+b,0);
- const pctLoss=(num('vac')+num('bad'))/100;
- const share=rented/units;                  // the rented units' share of building costs (e.g. 1/2, 2/3)
- const total=baseNoMort+piFull;             // whole-building monthly cost
- const rentedTotal=total*share, ownTotal=total-rentedTotal;
- function minRent(mort){return (baseNoMort+mort)*share/rented/(1-pctLoss)} // rented share, split across rented units, plus cushion
- const rA=minRent(piFull),rB=minRent(piInt);
- const lossAmt=rA*pctLoss; // per unit per month, set aside for vacancy and unpaid rent
- const hasLoan=loan>0&&num('rate')>0;
- return {hasLoan,units,occ,rented,share,total,rentedTotal,ownTotal,piFull,piInt,m,rA,rB,resYear,lossAmt,pctLoss,
-  parts:[['Mortgage',piFull*share/rented],['Taxes and insurance',m.taxes*share/rented],['Utilities',m.utilities*share/rented],['Routine upkeep',m.upkeep*share/rented],['Big replacements',m.repl*share/rented],['Your pay',m.pay*share/rented],['Reserves',m.reserves*share/rented],['Vacancy / unpaid rent',lossAmt]]};
-}
-const COL=['--c1','--c2','--c3','--c4','--c5','--c6','--c7','--acc2'];
-function bar(el,leg,parts,total){
- $(el).innerHTML=parts.map((p,i)=>`<div style="width:${total?p[1]/total*100:0}%;background:var(${COL[i%8]})" title="${p[0]}: ${usd(p[1])}"></div>`).join('');
- $(leg).innerHTML=parts.map((p,i)=>`<span><i style="background:var(${COL[i%8]})"></i>${p[0]}: ${usd(p[1])} (${pct(p[1],total)}%)</span>`).join('')}
+const parse=s=>{const v=parseFloat(String(s).replace(/[$,%\s]/g,''));return isFinite(v)?v:NaN};
+const has=id=>String($(id).value).trim()!==''&&!isNaN(parse($(id).value));
+const val=id=>{const v=parse($(id).value);return isFinite(v)&&v>=0?v:0};
 const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
-function calc(){
- const c=compute();
- $('outA').textContent=usd(c.rA);$('outB').textContent=c.hasLoan?usd(c.rB)+' per unit per month':'Add your loan balance and interest rate below to see this.';
- $('mortWarn').classList.toggle('hide',!noSale);
- $('shareLine').innerHTML=c.occ>0
-  ?`Your ${plural(c.rented,'rented unit')} ${c.rented===1?'covers':'cover'} <b>${c.rented} of ${c.units} shares</b> (${pct(c.rented,c.units)}%) of the building's costs: <b>${usd(c.rentedTotal)}</b> a month. The ${plural(c.occ,'unit')} you live in ${c.occ===1?'carries':'carry'} the other ${usd(c.ownTotal)}, which is your own housing cost, like anyone's rent.`
-  :`Every unit is rented, so rent covers all of the building's costs: <b>${usd(c.total)}</b> a month.`;
- $('method').textContent=`Method: add up all monthly costs, take the rented units' share (${c.rented} of ${c.units}), split it equally across the ${plural(c.rented,'rented unit')}, then add a cushion for vacancies and unpaid rent.`;
- const total=c.parts.reduce((a,p)=>a+p[1],0);
- bar('bar1','leg1',c.parts,total);
- const mt=c.parts[0][1]+c.parts[1][1]; // mortgage + taxes/insurance
- $('share').textContent=pct(mt,total)+'%';
- bar('bar2','leg2',[['Mortgage + taxes + insurance',mt],['Everything else',total-mt]],total);
- const fixed=c.parts[0][1]+c.parts[1][1]+c.parts[5][1];
- $('fixvar').textContent=`Mostly fixed (mortgage, taxes, insurance, your pay): ${pct(fixed,total)}%. Variable (utilities, upkeep, replacements, reserves): ${total>0?100-pct(fixed,total):0}%.`;
- $('repl').innerHTML=R.map((r,i)=>{const v=c.resYear[i]/12*c.share/c.rented;$('ry'+i)&&($('ry'+i).textContent=usd(c.resYear[i])+'/yr');return `<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:4px 0"><span>${r[0]} (${usd(r[1])} over ${r[2]} yrs)</span><b>${usd(v)}/month</b></div>`}).join('');
- const i=+$('wi').value||0,f=+$('wm').value;$('wiV').textContent=f;
- const c2=compute({i,f}),d=c2.rA-c.rA;
- $('wiOut').textContent=`If your ${R[i][0].toLowerCase()} costs ${f}x as much, minimum rent rises by about ${usd(d)} per unit per month.`;
- drawLinks();
- const mk=parseFloat($('mkt').value);
- if(!(mk>0)||!(c.rA>0)){$('mktOut').innerHTML='';return}
- const gap=mk-c.rA;
- $('mktOut').innerHTML=`<div class="vs"><div><div class="big">${usd(c.rA)}</div><div>Rent at cost, per unit per month</div></div><div><div class="big mk">${usd(mk)}</div><div>Typical rent nearby</div></div></div>`+
-  (gap>0
-   ?`<p class="msg">Charging ${usd(c.rA)} already covers the mortgage, taxes, insurance, repairs, savings for every big replacement, emergency and planning funds, a cushion for vacancies, and pays you ${usd(num('wage'))} an hour for your time. Market rent would add ${usd(gap)} a month per unit (${usd(gap*12*c.rented)} a year across your ${plural(c.rented,'rented unit')}) on top of every real cost.</p>`
-   :`<p class="msg">Rents nearby are at or below what this building needs. Double-check your numbers; your costs may be higher than typical.</p>`);
+const TAGS={typical:['typical',''],record:['county record','rec'],est:['estimate',''],lookup:['estimate','']};
+function setF(id,v,src){const e=$(id);e.value=v;e.dataset.src=src||'';tag(id)}
+function tag(id){const t=$('tag-'+id);if(!t)return;const s=TAGS[$(id).dataset.src];t.textContent=s?s[0]:'';t.className='tag'+(s&&s[1]?' '+s[1]:'')}
+let R=REPL0.map(r=>r.slice()), lookupAV=0, noSale=false;
+
+/* ===== MATH ===== */
+function pmt(P,rate,yrs){const r=rate/100/12,n=yrs*12;if(P<=0||n<=0)return 0;if(r===0)return P/n;return P*r/(1-Math.pow(1+r,-n))}
+function balanceAfter(P,rate,yrs,months){const r=rate/100/12,n=yrs*12;if(months>=n)return 0;if(r===0)return P*(1-months/n);
+ const p=pmt(P,rate,yrs),g=Math.pow(1+r,months);return Math.max(0,P*g-p*(g-1)/r)}
+function lookupTax(){const ex=val('occ')>=1?HOMEOWNER_EXEMPTION+($('senior').checked?SENIOR_EXEMPTION:0):0;return Math.round(Math.max(0,lookupAV*STATE_EQUALIZER-ex)*TAX_RATE)}
+function missing(){
+ const m=[],u=val('units'),o=val('occ');
+ if(!has('units')||!(u>=1&&u<=6&&Number.isInteger(u)))m.push('units in the building (1 to 6)');
+ if(!has('occ')||!Number.isInteger(o))m.push('units you live in');
+ else if(has('units')&&o>=u)m.push('units you live in (must be fewer than the total, so at least one is rented)');
+ if(!has('pi'))m.push('monthly mortgage payment (0 if paid off)');
+ if(!has('tax'))m.push('property taxes');
+ if(!has('ins'))m.push('insurance');
+ return m}
+function compute(mult){ // mult: optional {i,f} to scale one replacement cost
+ const units=val('units'),occ=val('occ'),rented=units-occ,share=rented/units;
+ const pi=val('pi');
+ const piInt=(has('bal')&&has('rate'))?Math.min(pi,val('bal')*val('rate')/1200):null;
+ const resYear=R.map((r,i)=>{const c=(mult&&mult.i==i)?r[1]*mult.f:r[1];return r[2]>0?c/r[2]:0});
+ const m={ // whole-building monthly costs
+  taxes:(val('tax')+val('ins'))/12, utilities:val('heat')+val('water')+val('elec')+val('garb'),
+  upkeep:(val('minor')+val('snow'))/12, repl:resYear.reduce((a,b)=>a+b,0)/12,
+  pay:val('hours')*val('wage'), funds:val('emerg')+val('plan')+val('legal')/12};
+ const base=Object.values(m).reduce((a,b)=>a+b,0);
+ const loss=Math.min(0.9,(val('vac')+val('bad'))/100);
+ const total=base+pi;
+ const per=x=>x*share/rented;                       // a whole-building amount -> per rented unit
+ const rent=mort=>per(base+mort)/(1-loss);          // rented share, split across rented units, plus cushion
+ const rA=rent(pi);
+ return {units,occ,rented,share,total,pi,piInt,m,resYear,loss,rA,rB:piInt===null?null:rent(piInt),per,
+  lines:[['Mortgage',per(pi)],['Property taxes and insurance',per(m.taxes)],['Utilities',per(m.utilities)],['Routine repairs and yard',per(m.upkeep)],
+   ['Savings for big replacements',per(m.repl)],['Your pay',per(m.pay)],['Emergency, planning, legal',per(m.funds)],['Vacancy and unpaid-rent cushion',rA*loss]]};
 }
-['wi','wm','mkt'].forEach(id=>$(id).addEventListener('input',calc));
-/* ===== COMPARABLE RENTS (links out, filters preset) ===== */
+
+/* ===== RENDER ===== */
+function calc(){
+ if(lookupAV&&$('tax').dataset.src==='lookup')$('tax').value=lookupTax();
+ $('seniorRow').classList.toggle('hide',!(lookupAV&&$('tax').dataset.src==='lookup'&&val('occ')>=1));
+ $('mortWarn').classList.toggle('hide',!noSale);
+ drawLinks();
+ const miss=missing();
+ R.forEach((r,i)=>{const c=$('rp'+i);if(c)c.textContent=r[2]>0?usd(r[1]/r[2]/12)+'/mo':'—'});
+ if(miss.length){
+  $('answer').classList.add('hide');$('missing').classList.remove('hide');
+  $('missing').innerHTML='To see your minimum rent, fill in: '+miss.map(x=>`<b>${x}</b>`).join(', ')+'.';
+  $('mktOut').innerHTML='';$('wiOut').textContent='Fill in steps 1 to 3 first.';return}
+ $('missing').classList.add('hide');$('answer').classList.remove('hide');
+ const c=compute();
+ $('outA').textContent=usd(c.rA);
+ $('shareLine').innerHTML=c.occ>0
+  ?`Your building costs <b>${usd(c.total)}</b> a month to run. Your ${plural(c.rented,'rented unit')} ${c.rented===1?'covers':'cover'} ${c.rented} of ${c.units} shares (${Math.round(c.share*100)}%): ${usd(c.total*c.share)}. The ${plural(c.occ,'unit')} you live in ${c.occ===1?'carries':'carry'} the other ${usd(c.total-c.total*c.share)}, as your own housing cost.`
+  :`Your building costs <b>${usd(c.total)}</b> a month to run, split across ${plural(c.rented,'rented unit')}.`;
+ $('receipt').innerHTML=c.lines.map(([n,v])=>`<tr><td>${n}</td><td class="num">${usd(v)}</td></tr>`).join('')+`<tr class="total"><td>Minimum rent per unit</td><td class="num">${usd(c.rA)}</td></tr>`;
+ const mt=c.lines[0][1]+c.lines[1][1];
+ $('scary').textContent=c.rA>0?`The mortgage, taxes and insurance are ${Math.round(mt/c.rA*100)}% of this. Everything else, including savings for every big replacement, is ${100-Math.round(mt/c.rA*100)}%.`:'';
+ const ob=$('outB');
+ if(c.rB!==null&&c.pi>0){ob.classList.remove('hide');ob.innerHTML=`<b>Interest-only view: ${usd(c.rB)} per unit.</b> That counts only the interest part of your mortgage and treats the principal as your own savings, since it builds equity you keep.`}else ob.classList.add('hide');
+ const i=+$('wi').value||0,f=+$('wm').value;$('wiV').textContent=f;
+ $('wiOut').textContent=`If your ${R[i][0].toLowerCase()} costs ${f}x as much (${usd(R[i][1]*f)}), minimum rent rises by about ${usd(compute({i,f}).rA-c.rA)} per unit per month.`;
+ const mk=val('mkt');
+ if(!(mk>0)){$('mktOut').innerHTML='';return}
+ const gap=mk-c.rA;
+ $('mktOut').innerHTML=`<div class="vs"><div><b>${usd(c.rA)}</b>Rent at cost</div><div class="mk"><b>${usd(mk)}</b>Typical rent nearby</div></div>`+(gap>0
+  ?`<p class="msg">Charging ${usd(c.rA)} already covers the mortgage, taxes, insurance, repairs, savings for every big replacement, emergency and planning funds, a vacancy cushion, and pays you ${usd(val('wage'))} an hour. Market rent would add ${usd(gap)} a month per unit (${usd(gap*12*c.rented)} a year across your ${plural(c.rented,'rented unit')}) on top of every real cost.</p>`
+  :`<p class="msg">Rents nearby are at or below what this building needs. Double-check your numbers; your costs may be higher than typical.</p>`);
+}
+function drawRepl(){
+ $('rt').innerHTML=R.map((r,i)=>`<tr><td>${r[0]}</td><td class="num"><div class="box"><span>$</span><input inputmode="decimal" value="${r[1]}" data-i="${i}" data-k="1" aria-label="${r[0]} cost"></div></td><td class="num"><div class="box" style="max-width:100px"><input inputmode="numeric" value="${r[2]}" data-i="${i}" data-k="2" aria-label="${r[0]} years it lasts"><span>yrs</span></div></td><td class="num" id="rp${i}"></td></tr>`).join('');
+ $('rt').querySelectorAll('input').forEach(e=>e.addEventListener('input',()=>{const v=parse(e.value);R[e.dataset.i][e.dataset.k]=isFinite(v)&&v>=0?v:0;calc()}));
+ $('wi').innerHTML=R.map((r,i)=>`<option value="${i}">${r[0]}</option>`).join('')}
 function drawLinks(){
  const zip=($('cz_zip').value.match(/\d{5}/)||[''])[0],beds=Math.max(0,Math.min(6,parseInt($('cz_beds').value)||0));
  const cl=new URLSearchParams({min_bedrooms:beds,max_bedrooms:beds});
@@ -308,76 +292,65 @@ function drawLinks(){
  if($('cz_laundry').checked)cl.set('laundry','1');                       // washer/dryer in unit
  if($('cz_ac').checked)cl.set('airconditioning','1');
  const area=zip?`chicago-il-${zip}`:'chicago-il',bd=beds===0?'studios':`${beds}-bedrooms`;
- const L=[['Craigslist','https://chicago.craigslist.org/search/apa?'+cl],
-  ['Zillow',`https://www.zillow.com/${area}/rentals/${beds}-_beds/`],
-  ['Apartments.com',`https://www.apartments.com/${area}/${bd}/`]];
- $('czLinks').innerHTML=L.map(([n,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">Search ${n} &#8599;</a>`).join('')}
-['cz_zip','cz_beds','cz_park','cz_laundry','cz_ac'].forEach(id=>$(id).addEventListener('input',drawLinks));
+ $('czLinks').innerHTML=[['Craigslist','https://chicago.craigslist.org/search/apa?'+cl],['Zillow',`https://www.zillow.com/${area}/rentals/${beds}-_beds/`],['Apartments.com',`https://www.apartments.com/${area}/${bd}/`]]
+  .map(([n,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">Search ${n} &#8599;</a>`).join('')}
+function reset(){
+ ALL.forEach(id=>setF(id,TYPICAL[id]??'',TYPICAL[id]!==undefined?'typical':''));
+ R=REPL0.map(r=>r.slice());drawRepl();lookupAV=0;noSale=false;$('senior').checked=false;
+ ['addr','mkt','cz_zip'].forEach(id=>$(id).value='');$('lmsg').innerHTML='';calc()}
+
+/* ===== EVENTS ===== */
+ALL.forEach(id=>$(id).addEventListener('input',()=>{$(id).dataset.src='';tag(id);if(id==='pi')noSale=false;calc()}));
+['mkt','cz_zip','cz_beds','cz_park','cz_laundry','cz_ac','senior','wi','wm'].forEach(id=>$(id).addEventListener('input',calc));
+$('reset').onclick=()=>{reset();window.scrollTo({top:0,behavior:'smooth'})};
+$('print').onclick=()=>window.print();
+$('samples').innerHTML=SAMPLES.map((s,i)=>`<button class="linkish" data-s="${i}">${s.n}</button>`).join(' · ');
+$('samples').onclick=e=>{const i=e.target.dataset.s;if(i===undefined)return;reset();Object.entries(SAMPLES[i].v).forEach(([k,v])=>setF(k,v,'est'));
+ $('lmsg').innerHTML='<p class="msg">Hypothetical example, not a real property. Every number is editable.</p>';calc()};
+
 /* ===== ADDRESS LOOKUP ===== */
 async function q(ds,params){const r=await fetch(API+ds+'.json?'+new URLSearchParams(params));if(!r.ok)throw new Error(r.status);return r.json()}
 const isTrue=v=>v===true||/^(true|1|y)$/i.test(String(v));
 const SUFFIX=/^(AVE|AVENUE|ST|STREET|BLVD|BOULEVARD|RD|ROAD|DR|DRIVE|CT|COURT|PL|PLACE|PKWY|PARKWAY|TER|TERRACE|LN|LANE|WAY|HWY)$/;
 const toks=s=>String(s).toUpperCase().replace(/[^A-Z0-9 ]/g,' ').split(/\s+/).filter(Boolean);
-function fail(t){$('lmsg').innerHTML=`<p class="msg">${t||'We could not reach Cook County records for that address (the address may not match, or this page may be blocked from the network).'} Enter your numbers in the Calculator tab, or start from an example. Nothing was made up.</p>`}
+const lmsg=h=>$('lmsg').innerHTML=`<p class="msg">${h}</p>`;
+$('addr').addEventListener('keydown',e=>{if(e.key==='Enter')$('go').click()});
 $('go').onclick=async()=>{
- const raw=$('addr').value.trim(),luIn=$('lk_units').value.trim(),loIn=$('lk_occ').value.trim(),lo=+loIn;
- let lu=+luIn;
- if(loIn===''||!(lo>=0)){$('lmsg').innerHTML='<p class="msg">First enter how many units you live in (0 if none).</p>';return}
- if(luIn!==''&&!(lu>=1&&lu<=6&&lo<lu)){$('lmsg').innerHTML='<p class="msg">Units in building must be 1 to 6, and more than the units you live in. Or leave it blank.</p>';return}
- const key=toks(raw).filter(t=>!SUFFIX.test(t)); // house number + street name, without Ave/St/etc.
- if(key.length<2||!/^\d/.test(key[0])){$('lmsg').innerHTML='<p class="msg">Enter a street address with a house number, like 1234 N Example Ave.</p>';return}
- $('lmsg').innerHTML='<p>Looking up...</p>';
+ const key=toks($('addr').value).filter(t=>!SUFFIX.test(t)); // house number + street name, without Ave/St/etc.
+ if(key.length<2||!/^\d/.test(key[0]))return lmsg('Enter a street address with a house number, like 1234 N Example Ave.');
+ lmsg('Looking up...');
  try{
   // Full-text search, then keep only rows whose PROPERTY address (not mailing address) matches.
   const hits=await q(DS.addr,{$q:key.join(' '),$limit:'200'});
   const propText=h=>Object.keys(h).filter(k=>/^prop/i.test(k)).map(k=>h[k]).join(' ');
   const hit=hits.find(h=>{const t=toks(propText(h));return t[0]===key[0]&&key.every(k=>t.includes(k))});
-  if(!hit)return fail('We could not find that address in Cook County records.');
+  if(!hit)return lmsg('We could not find that address in Cook County records. Fill in the steps below yourself.');
   const pin=hit.pin,zk=Object.keys(hit).find(k=>/^prop.*zip/i.test(k)),zip=zk?String(hit[zk]).slice(0,5):'';
   const [sales,vals,chars]=await Promise.all([q(DS.sales,{pin,$order:'sale_date DESC',$limit:'20'}),q(DS.values,{pin,$order:'year DESC',$limit:'1'}),
    q(DS.chars,{pin,$order:'year DESC',$limit:'1'}).catch(()=>[])]);
+  const keepOcc=$('occ').value;reset();if(keepOcc!=='')setF('occ',keepOcc,'');
+  $('addr').value=key.join(' ');if(zip)$('cz_zip').value=zip;
+  const out=[`Found PIN ${pin}.`];
   const recUnits=chars.length?APTS[chars[0].char_apts]:undefined;
-  let unitTxt='';
-  if(luIn===''){
-   if(!recUnits){$('lmsg').innerHTML=`<p class="msg">Found PIN ${pin}, but Cook County does not list how many units it has. Enter the number of units in the building and look up again.</p>`;$('lk_units').focus();return}
-   if(recUnits>6){$('lmsg').innerHTML='<p class="msg">Cook County lists this building with more than 6 units. This calculator is built for small buildings of 1 to 6 units.</p>';return}
-   if(lo>=recUnits){$('lmsg').innerHTML=`<p class="msg">Cook County lists this building as ${plural(recUnits,'unit')}, so at least one unit must be rented. Check the units you live in, or enter the building's unit count yourself.</p>`;return}
-   lu=recUnits;unitTxt=`Cook County lists ${plural(recUnits,'unit')}. `;
-  } else if(recUnits&&recUnits!==lu) unitTxt=`Using your count of ${plural(lu,'unit')} (Cook County lists ${recUnits}). `;
-  reset();$('t2').click();
-  setVal('units',lu,luIn===''?'record':'user');setVal('occ',lo,'user');setVal('ins',2000,'est');
-  if(zip)$('cz_zip').value=zip;
-  let out=`<p class="msg">Found PIN ${pin}. ${unitTxt}`;
+  if(recUnits&&recUnits<=6){setF('units',recUnits,'record');out.push(`Cook County lists ${plural(recUnits,'unit')}.`)}
+  else if(recUnits>6)out.push('Cook County lists more than 6 units; this calculator is built for 1 to 6.');
+  else out.push('Cook County does not list the number of units; enter it below.');
   if(vals.length){const av=+(vals[0].board_tot||vals[0].certified_tot||vals[0].mailed_tot);
-   if(av>0){let ex=0,exTxt='';
-    if(lo>=1){ex=HOMEOWNER_EXEMPTION;exTxt=`, minus the ${usd(HOMEOWNER_EXEMPTION)} homeowner exemption`;
-     if($('lk_senior').checked){ex+=SENIOR_EXEMPTION;exTxt+=` and ${usd(SENIOR_EXEMPTION)} senior exemption`}}
-    setVal('tax',Math.round(Math.max(0,av*STATE_EQUALIZER-ex)*TAX_RATE),'est');
-    out+=`Assessed value ${usd(av)}. Estimated taxes = assessed value x ${STATE_EQUALIZER} equalizer${exTxt}, x ${(TAX_RATE*100).toFixed(1)}% rate. Check your actual bill at the Treasurer's site. `}}
+   if(av>0){lookupAV=av;setF('tax',lookupTax(),'lookup');out.push(`Taxes estimated from the ${usd(av)} assessed value.`)}}
   const sale=sales.find(s=>+s.sale_price>10000&&!isTrue(s.is_multisale)&&!isTrue(s.sale_filter_deed_type));
-  let why='';
   if(sale){
    const d=new Date(String(sale.sale_date).slice(0,10)),yr=d.getFullYear(),price=+sale.sale_price;
    const yrs=Object.keys(RATES).map(Number),rt=RATES[yr]??RATES[yr<Math.min(...yrs)?Math.min(...yrs):Math.max(...yrs)];
-   const down=(+$('down').value||20)/100,orig=Math.round(price*(1-down));
-   const months=Math.max(0,Math.round((Date.now()-d)/(1000*60*60*24*30.4375)));
-   if(months>=360){why=`The last recorded sale was in ${yr}, more than 30 years ago, so a 30-year mortgage from then would be paid off.`;}
-   else{
-    const pay=Math.round(pmt(orig,rt,30)),bal=Math.round(balanceAfter(orig,rt,30,months));
-    setVal('loan',bal,'est');setVal('rate',rt,'est');setVal('term',30,'est');setVal('pi',pay,'est');
-    out+=`Last sale: ${usd(price)} in ${yr}. With ${Math.round(down*100)}% down, that suggests a ${usd(orig)} loan at ${rt}% (Freddie Mac ${yr} average): a payment of about ${usd(pay)} a month, with about ${usd(bal)} still owed today. This is an ESTIMATE; use your real numbers if you know them.`}
-  } else why='Cook County has no recent market sale on file for this property (for example, it was inherited, or only transferred within a family).';
-  if(why){noSale=true;setVal('loan',0,'est');setVal('pi',0,'est');$('mortWarnWhy').textContent=why}
-  $('lmsg').innerHTML=out+'</p>';reveal();
- }catch(e){fail()}};
-$('samples').innerHTML=SAMPLES.map((s,i)=>`<button data-s="${i}">${s.n}</button>`).join('');
-$('samples').onclick=e=>{const i=e.target.dataset.s;if(i===undefined)return;reset();$('t2').click();const v=SAMPLES[i].v;Object.keys(v).forEach(k=>setVal(k,v[k],'est'));$('lmsg').innerHTML='<p class="msg">Hypothetical example, not a real property.</p>';reveal()};
-/* ===== TABS / BUTTONS ===== */
-function tab(n){$('t1').setAttribute('aria-selected',n===1);$('t2').setAttribute('aria-selected',n===2)}
-$('t1').onclick=()=>{if(!revealed)$('intro').classList.remove('hide');$('lookup').classList.add('hide');tab(1)};
-$('t2').onclick=()=>{$('intro').classList.add('hide');$('lookup').classList.remove('hide');tab(2)};
-$('reset').onclick=()=>{$('mkt').value='';$('lmsg').innerHTML='';reset()};
-$('print').onclick=()=>window.print();
+   const orig=Math.round(price*(1-DOWN_PAYMENT)),months=Math.max(0,Math.round((Date.now()-d)/(864e5*30.4375)));
+   if(months>=360){noSale=true;setF('pi',0,'est');$('mortWarnWhy').textContent=`The last sale was in ${yr}, more than 30 years ago, so a 30-year mortgage from then would be paid off.`}
+   else{setF('pi',Math.round(pmt(orig,rt,30)),'est');setF('bal',Math.round(balanceAfter(orig,rt,30,months)),'est');setF('rate',rt,'est');
+    out.push(`Mortgage estimated from the ${usd(price)} sale in ${yr} (${Math.round(DOWN_PAYMENT*100)}% down, ${rt}% rate).`)}
+  } else {noSale=true;setF('pi',0,'est');$('mortWarnWhy').textContent='Cook County has no recent market sale on file (for example, it was inherited or transferred within a family).'}
+  setF('ins',2000,'est');
+  out.push('Numbers marked "estimate" are rough; replace them with your real ones if you have them.');
+  lmsg(out.join(' '));calc();
+ }catch(e){lmsg('We could not reach Cook County records right now. Fill in the steps below yourself, or try an example.')}};
+
 reset();
 </script>
 </body>
