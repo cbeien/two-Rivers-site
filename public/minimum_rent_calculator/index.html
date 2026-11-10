@@ -65,8 +65,8 @@ footer{color:var(--mute);font-size:14px;margin-top:30px}
   <h2>First, tell us about your building</h2>
   <p class="sub">Seven quick questions. We will not show any numbers until you answer. You can change everything afterwards.</p>
   <div class="grid">
-    <label><b>How many units does the building have?</b><input id="q_units" type="number" min="1" max="4" placeholder="2"></label>
-    <label><b>How many of those units do you live in?</b><input id="q_occ" type="number" min="0" max="3" placeholder="1"></label>
+    <label><b>How many units does the building have?</b><input id="q_units" type="number" min="1" max="6" placeholder="2"></label>
+    <label><b>How many of those units do you live in?</b><input id="q_occ" type="number" min="0" max="5" placeholder="1"></label>
     <label><b>Monthly mortgage payment ($)</b><input id="q_pi" type="number" min="0" placeholder="Enter 0 if paid off"><small>Principal and interest only, not taxes.</small></label>
     <label><b>Property taxes per year ($)</b><input id="q_tax" type="number" min="0" placeholder="From your tax bill"></label>
     <label><b>Insurance per year ($)</b><input id="q_ins" type="number" min="0" placeholder="From your policy"></label>
@@ -85,8 +85,8 @@ footer{color:var(--mute);font-size:14px;margin-top:30px}
     <button class="pri" id="go">Look up</button>
   </div>
   <div class="grid" style="margin-top:10px">
-    <label><b>Units in building</b><input id="lk_units" type="number" min="1" max="4"></label>
-    <label><b>Units you live in</b><input id="lk_occ" type="number" min="0" max="3"></label>
+    <label><b>Units you live in</b><input id="lk_occ" type="number" min="0" max="5" placeholder="1"></label>
+    <label><b>Units in building, optional</b><input id="lk_units" type="number" min="1" max="6" placeholder="From county records"><small>Leave blank and we will use Cook County's count.</small></label>
     <label><b>Assumed down payment (%)</b><input id="down" type="number" value="20"></label>
   </div>
   <label class="chk" style="margin-top:10px"><input type="checkbox" id="lk_senior"> I live here and I am 65 or older (senior exemption)</label>
@@ -177,7 +177,8 @@ const TAX_RATE = 0.067;             // Rough Chicago combined rate (~6.7%). Roug
 const HOMEOWNER_EXEMPTION = 10000;  // Cook County homeowner exemption: $ off equalized assessed value, owner-occupied.
 const SENIOR_EXEMPTION = 8000;      // Cook County senior exemption (65+), on top of the homeowner exemption.
 const API = 'https://datacatalog.cookcountyil.gov/resource/';
-const DS = {addr:'3723-97qp', sales:'wvhk-k5uv', values:'uzyt-m557'}; // Parcel Addresses, Parcel Sales, Assessed Values.
+const DS = {addr:'3723-97qp', sales:'wvhk-k5uv', values:'uzyt-m557', chars:'x54s-btds'}; // Parcel Addresses, Parcel Sales, Assessed Values, Building Characteristics.
+const APTS = {None:1, Two:2, Three:3, Four:4, Five:5, Six:6}; // char_apts words -> units. "None" = single-family home.
 /* Freddie Mac PMMS 30-yr fixed, ANNUAL averages (%). Sales in a year not listed use the latest year.
    https://www.freddiemac.com/pmms . Add a year by appending a pair. 2025 is approximate (about 6.6%). */
 const RATES={1990:10.13,1991:9.25,1992:8.39,1993:7.31,1994:8.38,1995:7.93,1996:7.81,1997:7.60,1998:6.94,1999:7.44,2000:8.05,2001:6.97,2002:6.54,2003:5.83,2004:5.84,2005:5.87,2006:6.41,2007:6.34,2008:6.03,2009:5.04,2010:4.69,2011:4.45,2012:3.66,2013:3.98,2014:4.17,2015:3.85,2016:3.65,2017:3.99,2018:4.54,2019:3.94,2020:3.11,2021:2.96,2022:5.34,2023:6.81,2024:6.72,2025:6.60};
@@ -190,7 +191,7 @@ const SAMPLES=[
  {n:'Hypothetical 3-flat, owner lives in one',v:{units:3,occ:1,sqft:3300,loan:420000,rate:6.5,tax:7000,ins:3000}},
  {n:'Hypothetical 2-flat, mortgage paid off',v:{units:2,occ:1,loan:0,tax:4800,ins:1900}}];
 const FIELDS=[
- ['Building',[['units','Units in building','1 to 4'],['occ','Units you live in','0 to 3. Your own unit does not need to earn rent.'],['sqft','Square feet'],['year','Year built']]],
+ ['Building',[['units','Units in building','1 to 6'],['occ','Units you live in','Your own unit does not need to earn rent.'],['sqft','Square feet'],['year','Year built']]],
  ['Mortgage',[['loan','Loan balance today ($)','What you still owe. Enter 0 if no mortgage.'],['rate','Interest rate (%)'],['term','Term (years)'],['pi','Monthly payment ($)','Principal and interest. Leave blank to calculate from the balance. Use your real number if you know it.'],['escrow','Monthly escrow ($)','Only if not already counted in taxes/insurance below.']]],
  ['Taxes and insurance (per year)',[['tax','Property taxes ($/yr)','From your tax bill if you have it.'],['ins','Insurance ($/yr)']]],
  ['Utilities you pay (per month)',[['heat','Heat'],['elec','Common electric'],['water','Water / sewer'],['garb','Garbage']]],
@@ -216,7 +217,7 @@ $('qgo').onclick=()=>{
  const g=i=>$(i).value.trim(),n=i=>parseFloat(g(i));
  const u=n('q_units'),o=n('q_occ'),err=$('qerr');
  let m='';
- if(!(u>=1&&u<=4))m='Enter how many units the building has (1 to 4).';
+ if(!(u>=1&&u<=6))m='Enter how many units the building has (1 to 6).';
  else if(!(o>=0&&o<u))m='Enter how many units you live in. It must be fewer than the total, so at least one unit is rented.';
  else if(g('q_pi')===''||n('q_pi')<0)m='Enter your monthly mortgage payment, or 0 if it is paid off.';
  else if(g('q_tax')===''||n('q_tax')<0)m='Enter your yearly property taxes.';
@@ -319,8 +320,10 @@ const SUFFIX=/^(AVE|AVENUE|ST|STREET|BLVD|BOULEVARD|RD|ROAD|DR|DRIVE|CT|COURT|PL
 const toks=s=>String(s).toUpperCase().replace(/[^A-Z0-9 ]/g,' ').split(/\s+/).filter(Boolean);
 function fail(t){$('lmsg').innerHTML=`<p class="msg">${t||'We could not reach Cook County records for that address (the address may not match, or this page may be blocked from the network).'} Enter your numbers in the Calculator tab, or start from an example. Nothing was made up.</p>`}
 $('go').onclick=async()=>{
- const raw=$('addr').value.trim(),lu=+$('lk_units').value,lo=+$('lk_occ').value;
- if(!(lu>=1&&lu<=4)||!(lo>=0&&lo<lu)){$('lmsg').innerHTML='<p class="msg">First enter the number of units and how many you live in.</p>';return}
+ const raw=$('addr').value.trim(),luIn=$('lk_units').value.trim(),loIn=$('lk_occ').value.trim(),lo=+loIn;
+ let lu=+luIn;
+ if(loIn===''||!(lo>=0)){$('lmsg').innerHTML='<p class="msg">First enter how many units you live in (0 if none).</p>';return}
+ if(luIn!==''&&!(lu>=1&&lu<=6&&lo<lu)){$('lmsg').innerHTML='<p class="msg">Units in building must be 1 to 6, and more than the units you live in. Or leave it blank.</p>';return}
  const key=toks(raw).filter(t=>!SUFFIX.test(t)); // house number + street name, without Ave/St/etc.
  if(key.length<2||!/^\d/.test(key[0])){$('lmsg').innerHTML='<p class="msg">Enter a street address with a house number, like 1234 N Example Ave.</p>';return}
  $('lmsg').innerHTML='<p>Looking up...</p>';
@@ -331,11 +334,20 @@ $('go').onclick=async()=>{
   const hit=hits.find(h=>{const t=toks(propText(h));return t[0]===key[0]&&key.every(k=>t.includes(k))});
   if(!hit)return fail('We could not find that address in Cook County records.');
   const pin=hit.pin,zk=Object.keys(hit).find(k=>/^prop.*zip/i.test(k)),zip=zk?String(hit[zk]).slice(0,5):'';
-  const [sales,vals]=await Promise.all([q(DS.sales,{pin,$order:'sale_date DESC',$limit:'20'}),q(DS.values,{pin,$order:'year DESC',$limit:'1'})]);
+  const [sales,vals,chars]=await Promise.all([q(DS.sales,{pin,$order:'sale_date DESC',$limit:'20'}),q(DS.values,{pin,$order:'year DESC',$limit:'1'}),
+   q(DS.chars,{pin,$order:'year DESC',$limit:'1'}).catch(()=>[])]);
+  const recUnits=chars.length?APTS[chars[0].char_apts]:undefined;
+  let unitTxt='';
+  if(luIn===''){
+   if(!recUnits){$('lmsg').innerHTML=`<p class="msg">Found PIN ${pin}, but Cook County does not list how many units it has. Enter the number of units in the building and look up again.</p>`;$('lk_units').focus();return}
+   if(recUnits>6){$('lmsg').innerHTML='<p class="msg">Cook County lists this building with more than 6 units. This calculator is built for small buildings of 1 to 6 units.</p>';return}
+   if(lo>=recUnits){$('lmsg').innerHTML=`<p class="msg">Cook County lists this building as ${plural(recUnits,'unit')}, so at least one unit must be rented. Check the units you live in, or enter the building's unit count yourself.</p>`;return}
+   lu=recUnits;unitTxt=`Cook County lists ${plural(recUnits,'unit')}. `;
+  } else if(recUnits&&recUnits!==lu) unitTxt=`Using your count of ${plural(lu,'unit')} (Cook County lists ${recUnits}). `;
   reset();$('t2').click();
-  setVal('units',lu,'user');setVal('occ',lo,'user');setVal('ins',2000,'est');
+  setVal('units',lu,luIn===''?'record':'user');setVal('occ',lo,'user');setVal('ins',2000,'est');
   if(zip)$('cz_zip').value=zip;
-  let out=`<p class="msg">Found PIN ${pin}. `;
+  let out=`<p class="msg">Found PIN ${pin}. ${unitTxt}`;
   if(vals.length){const av=+(vals[0].board_tot||vals[0].certified_tot||vals[0].mailed_tot);
    if(av>0){let ex=0,exTxt='';
     if(lo>=1){ex=HOMEOWNER_EXEMPTION;exTxt=`, minus the ${usd(HOMEOWNER_EXEMPTION)} homeowner exemption`;
