@@ -118,6 +118,7 @@ details.lookup summary{cursor:pointer;font-weight:600;color:var(--acc)}
 .list td.num,.list th.num{text-align:right;white-space:nowrap}
 .list input.txt{font:inherit;font-size:15px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);width:100%;min-width:90px}
 .list .box{min-width:90px}
+.list tfoot td{border-top:2px solid var(--ink);border-bottom:0;font-weight:700}
 .list .x{border:0;background:none;color:var(--mute);font-size:18px;padding:2px 6px;cursor:pointer}
 .add{margin-top:10px;font-size:15px;padding:7px 14px}
 @media(max-width:560px){.list,.list tbody,.list tr,.list td{display:block;width:100%}.list thead{display:none}.list tr{padding:8px 0;border-bottom:1px solid var(--line)}.list td{border:0;padding:3px 0;text-align:left!important}.list td[data-l]::before{content:attr(data-l);display:block;font-size:13px;color:var(--mute)}}
@@ -291,7 +292,8 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
   <p class="hint">Units aren't always the same. Split the rent so bigger units pay more.</p>
   <div class="row"><label for="splitBy">How to split the rent</label><select id="splitBy" class="sel"><option value="equal">Same rent for every unit</option><option value="beds">By bedrooms</option><option value="sqft">By square feet</option></select></div>
   <p id="unitsNote" class="hint hide"></p>
-  <table class="list" id="unitsTable"><thead><tr><th>Rented unit</th><th class="num col-beds">Bedrooms</th><th class="num col-sqft">Square feet</th><th class="num">Minimum rent</th><th class="num">Rent nearby (optional)</th></tr></thead><tbody id="unitsT"></tbody></table>
+  <table class="list" id="unitsTable"><thead><tr><th>Rented unit</th><th class="num col-beds">Bedrooms</th><th class="num col-sqft">Square feet</th><th class="num">Minimum rent</th><th class="num">Rent nearby (optional)</th></tr></thead><tbody id="unitsT"></tbody><tfoot id="unitsFoot"></tfoot></table>
+  <div id="unitsCheck" class="msg hide"></div>
 </section>
 
 <button type="button" class="float gated" id="float" aria-live="polite" aria-label="Your minimum rent"><div class="fl-l">Your minimum rent<small id="flM">per rented unit, per month</small></div><div class="fl-r"><div class="fl-n hide" id="flBw"><small><span class="delta" id="flDB"></span>interest-only view</small><span class="fl-b" id="flB"></span></div><div class="fl-n"><small><span class="delta" id="flD"></span>&nbsp;</small><span class="fl-v" id="flV"></span></div></div></button>
@@ -498,7 +500,7 @@ function calc(){
   $('missing').innerHTML='To see your minimum rent, fill in: '+miss.map(x=>`<b>${x[1]}</b>`).join(', ')+'.';
   $('flV').textContent='—';$('flM').textContent='Fill in the questions above to see it';$('flBw').classList.add('hide');lastA=lastB=null;
   $('mktOut').innerHTML='';$('vacOut').textContent='Fill in steps 1 and 2 to see how much to set aside.';
-  document.querySelectorAll('.urent').forEach(e=>e.textContent='—');return}
+  document.querySelectorAll('.urent').forEach(e=>e.textContent='—');$('unitsFoot').innerHTML='';$('unitsCheck').classList.add('hide');return}
  $('missing').classList.add('hide');$('answer').classList.remove('hide');
  const c=compute();
  // headline
@@ -509,6 +511,11 @@ function calc(){
  $('outSub').textContent=est?'per unit, per month, and still cover every cost of owning this building.':'per month, for each rented unit';
  drawEsc(est);
  if(c.variable)$('manyOut').innerHTML=c.rents.map((r,i)=>`<div>${esc(UNITS[i].name)}<b>${usd(r)}</b><small>per month</small></div>`).join('');
+ {const n=c.rents.length,m=$('splitBy').value,R2=c.rents.map(Math.round),tot=R2.reduce((a,b)=>a+b,0);
+  const mkTot=UNITS.slice(0,n).reduce((a,u)=>a+(u.mkt||0),0),save=tot-Math.round(c.rentedCost); // from rounded figures so the sentence adds up exactly
+  $('unitsFoot').innerHTML=n>1?`<tr><td>Total</td><td class="num col-beds${m!=='beds'?' hide':''}"></td><td class="num col-sqft${m!=='sqft'?' hide':''}"></td><td class="num" style="color:var(--acc)">${usd(tot)}</td><td class="num">${mkTot>0?usd(mkTot):''}</td></tr>`:'';
+  const ck=$('unitsCheck');ck.classList.toggle('hide',n<1);
+  ck.innerHTML=`<b>&#10003; Every cost is covered.</b> Together your rented units bring in <b>${usd(tot)}</b> a month: their ${usd(c.rentedCost)} share of the building's costs, plus ${usd(save)} saved for empty months and unpaid rent.`+(c.occ>0?` Your own unit${c.occ>1?'s':''} cover${c.occ>1?'':'s'} the other ${usd(c.total-c.rentedCost)}.`:'')}
  c.rents.forEach((r,i)=>{const e=$('ur'+i);if(e)e.textContent=usd(r);const g=$('ug'+i),m=UNITS[i]&&UNITS[i].mkt;if(g)g.textContent=m>0?(m>r?`${usd(m-r)} above your minimum`:'at or below your minimum'):''});
  {const many=c.rented>1,rentIn=c.avg*c.rented,own=c.total-c.rentedCost;
   $('shareLine').innerHTML=c.occ>0
