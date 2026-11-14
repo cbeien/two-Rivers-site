@@ -727,6 +727,7 @@ $('go').onclick=async()=>{
  lkStep('ins','warn','Not in county records &middot; $2,000/yr placeholder. Use your policy.');
  await Promise.allSettled([pUnits,pTax,pSale]);
  if(!has('units')){document.body.classList.add('manual');lkStep('units','warn','Unit count not on file; enter it in Your building below.')}
+ if(lookupAV&&$('tax').dataset.src==='lookup'){$('tax').value=lookupTax();lkStep('tax','done',`${usd(lookupTax())}/yr &middot; estimated from the ${usd(lookupAV)} assessed value`)} // occupancy may have changed the exemption
  if(!ADV())toSimple();
  lookedUp=true;document.body.classList.add('has-data');calc();
  if(!missing().length)$('result').scrollIntoView({behavior:'smooth',block:'start'})};
