@@ -231,8 +231,8 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
 <!-- ADVANCED: ADDITIONAL LOANS -->
 <section class="step adv-only" id="sec-loans">
   <h2><span class="n">3</span>Additional loans</h2>
-  <p class="hint">Home equity, renovation or repair loans used for the building.</p>
-  <table class="list"><thead><tr><th>Loan</th><th class="num">Monthly payment</th><th></th></tr></thead><tbody id="loansT"></tbody></table>
+  <p class="hint">Home equity, renovation or repair loans used for the building. Enter the loan and we'll work out the monthly payment.</p>
+  <table class="list"><thead><tr><th>Loan</th><th class="num">Amount borrowed</th><th class="num">Interest rate</th><th class="num">Length</th><th class="num">Monthly payment</th><th></th></tr></thead><tbody id="loansT"></tbody></table>
   <button type="button" class="add" id="addLoan">+ Add a loan</button>
 </section>
 
@@ -399,6 +399,7 @@ function lookupTax(){const ex=val('occ')>=1?HOMEOWNER_EXEMPTION+($('senior').che
 function vacFrac(){return Math.min(0.5,(+$('vac_gap').value)/(+$('vac_every').value))} // empty months per tenant cycle
 const escrow=()=>$('esc_yes').checked;
 function ownerUtil(){let a=0;UTIL.forEach(([id])=>{if(!$('tp-'+id).checked)a+=val(id)});return a}
+const loanPay=l=>l.amt>0&&l.yrs>0?pmt(l.amt,l.rate||0,l.yrs):0;
 function replMonthly(r){return (r||R).reduce((a,x)=>a+(x[2]>0?x[1]/x[2]:0),0)/12}
 
 function missing(){
@@ -424,7 +425,7 @@ function compute(){
  else if(escrow())P.push(['Mortgage payment, with taxes and insurance',val('s_pay'),'']);
  else P.push(['Mortgage payment',val('s_pay'),''],['Property taxes',val('s_tax')/12,''],['Insurance',val('s_ins')/12,'']);
  if(val('hoa')>0)P.push(['HOA or condo dues',val('hoa'),'sec-fin']);
- LOANS.forEach(l=>{if(l.pay>0)P.push([l.name||'Other loan',l.pay,'sec-loans'])});
+ LOANS.forEach(l=>{const p=loanPay(l);if(p>0)P.push([l.name||'Other loan',p,'sec-loans'])});
  const upg=UPG.reduce((a,u)=>a+(u.cost>0&&u.years>0?u.cost/(u.years*12):0),0);
  if(upg>0)P.push(['Savings for planned upgrades',upg,'sec-upg']);
  const nUtil=P.length; // utilities line goes here
@@ -464,6 +465,7 @@ function calc(){
  const own=val('occ')>=1;UTIL.forEach(([id])=>$('sh-'+id).classList.toggle('hide',!own));
  drawMortInfo();drawLinks();syncUnits();
  R.forEach((r,i)=>{const c=$('rp'+i);if(c)c.textContent=r[2]>0?usd(r[1]/r[2]/12):'—'});
+ LOANS.forEach((l,i)=>{const c=$('lp'+i);if(c)c.textContent=loanPay(l)>0?usd(loanPay(l)):'—'});
  UPG.forEach((u,i)=>{const c=$('up'+i);if(c)c.textContent=u.cost>0&&u.years>0?usd(u.cost/(u.years*12)):'—'});
  const miss=missing();
  if(miss.length){
@@ -547,7 +549,11 @@ function bindList(tb,arr,keys,redraw){tb.querySelectorAll('[data-i]').forEach(e=
  e.addEventListener('input',()=>{const i=+e.dataset.i,k=e.dataset.k;arr[i][k]=e.dataset.t==='txt'?e.value:num(e.value);calc()})});
  tb.querySelectorAll('.x').forEach(b=>b.onclick=()=>{arr.splice(+b.dataset.i,1);redraw();calc()})}
 function drawLoans(){const tb=$('loansT');
- tb.innerHTML=LOANS.map((l,i)=>`<tr><td data-l="Loan"><input class="txt" data-t="txt" data-i="${i}" data-k="name" value="${esc(l.name)}" placeholder="e.g. Home equity loan" aria-label="Loan name"></td><td class="num" data-l="Monthly payment">${money(l.pay||'',`data-i="${i}" data-k="pay" aria-label="Monthly payment"`)}</td><td><button type="button" class="x" data-i="${i}" aria-label="Remove loan">&times;</button></td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--mute)">No additional loans.</td></tr>';
+ tb.innerHTML=LOANS.map((l,i)=>`<tr><td data-l="Loan"><input class="txt" data-t="txt" data-i="${i}" data-k="name" value="${esc(l.name)}" placeholder="e.g. Home equity loan" aria-label="Loan name"></td>`+
+  `<td class="num" data-l="Amount borrowed">${money(l.amt||'',`data-i="${i}" data-k="amt" aria-label="Amount borrowed"`)}</td>`+
+  `<td class="num" data-l="Interest rate"><div class="box"><input inputmode="decimal" value="${l.rate||''}" data-i="${i}" data-k="rate" aria-label="Interest rate"><span>%</span></div></td>`+
+  `<td class="num" data-l="Length"><div class="box"><input inputmode="numeric" value="${l.yrs||''}" data-i="${i}" data-k="yrs" aria-label="Loan length in years"><span>yrs</span></div></td>`+
+  `<td class="num" data-l="Monthly payment" id="lp${i}" style="font-weight:700">—</td><td><button type="button" class="x" data-i="${i}" aria-label="Remove loan">&times;</button></td></tr>`).join('')||'<tr><td colspan="6" style="color:var(--mute)">No additional loans.</td></tr>';
  bindList(tb,LOANS,null,drawLoans)}
 function drawUpg(){const tb=$('upgT');
  tb.innerHTML=UPG.map((u,i)=>`<tr><td data-l="Project"><input class="txt" data-t="txt" data-i="${i}" data-k="name" value="${esc(u.name)}" placeholder="e.g. New kitchen" aria-label="Project"></td><td class="num" data-l="Cost">${money(u.cost||'',`data-i="${i}" data-k="cost" aria-label="Cost"`)}</td><td class="num" data-l="In how many years"><div class="box"><input inputmode="numeric" value="${u.years||''}" data-i="${i}" data-k="years" aria-label="Years from now"><span>yrs</span></div></td><td class="num" data-l="Save per month" id="up${i}"></td><td><button type="button" class="x" data-i="${i}" aria-label="Remove project">&times;</button></td></tr>`).join('')||'<tr><td colspan="5" style="color:var(--mute)">No planned upgrades.</td></tr>';
@@ -638,7 +644,7 @@ FIELDS.forEach(id=>{const row=$(id).closest('.row'),x=document.createElement('di
 UTIL.forEach(([id])=>['tp-','sh-'].forEach(pf=>$(pf+id).addEventListener('input',()=>{syncUtil();calc()})));
 ['esc_yes','esc_no','senior','vac_every','vac_gap','mkt','cz_zip','cz_beds','cz_park','cz_laundry','cz_ac'].forEach(id=>$(id).addEventListener('input',calc));
 $('splitBy').addEventListener('input',()=>{unitsDrawn=-1;calc()});
-$('addLoan').onclick=()=>{LOANS.push({name:'',pay:0});drawLoans();calc();$('loansT').querySelector('tr:last-child input').focus()};
+$('addLoan').onclick=()=>{LOANS.push({name:'',amt:0,rate:0,yrs:10});drawLoans();calc();$('loansT').querySelector('tr:last-child input').focus()};
 $('addUpg').onclick=()=>{UPG.push({name:'',cost:0,years:0});drawUpg();calc();$('upgT').querySelector('tr:last-child input').focus()};
 $('addRepl').onclick=()=>{R.push(['New item',0,10]);drawRepl();calc();$('replT').querySelector('tr:last-child input').select()};
 $('openLC').onclick=()=>{openLC();runLC()};$('closeLC').onclick=closeLC;
