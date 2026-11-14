@@ -512,8 +512,8 @@ function calc(){
  c.rents.forEach((r,i)=>{const e=$('ur'+i);if(e)e.textContent=usd(r);const g=$('ug'+i),m=UNITS[i]&&UNITS[i].mkt;if(g)g.textContent=m>0?(m>r?`${usd(m-r)} above your minimum`:'at or below your minimum'):''});
  {const many=c.rented>1,rentIn=c.avg*c.rented,own=c.total-c.rentedCost;
   $('shareLine').innerHTML=c.occ>0
-   ?`The building costs <b>${usd(c.total)}</b> a month. Your ${plural(c.rented,'rented unit')} ${many?'bring':'brings'} in <b>${usd(rentIn)}</b>${many?` (${usd(c.avg)} each)`:''}, and your share for the ${plural(c.occ,'unit')} you live in is <b>${usd(own)}</b>, your own housing cost.`
-   :`The building costs <b>${usd(c.total)}</b> a month. Your ${plural(c.rented,'rented unit')} ${many?'bring':'brings'} in <b>${usd(rentIn)}</b> a month${many?`, ${usd(c.avg)} each`:''}.`}
+   ?`The building costs <b>${usd(c.total)}</b> a month. Your ${plural(c.rented,'rented unit')} ${many?'bring':'brings'} in <b>${usd(rentIn)}</b>${many?` (${usd(c.avg)} each)`:''}, which includes savings for empty months between tenants. Your share for the ${plural(c.occ,'unit')} you live in is <b>${usd(own)}</b>, your own housing cost.`
+   :`The building costs <b>${usd(c.total)}</b> a month. Your ${plural(c.rented,'rented unit')} ${many?'bring':'brings'} in <b>${usd(rentIn)}</b> a month${many?`, ${usd(c.avg)} each`:''}, which includes savings for empty months between tenants.`}
  const typicalTag=s=>!ADV()&&s&&s!=='sec-fin'&&s!=='sec-loans'&&s!=='sec-upg'?` <button type="button" class="adj" data-sec="${s}">typical &middot; adjust</button>`:'';
  $('receipt').innerHTML=c.lines.filter(l=>l[1]>0.5).map(([n,v,s])=>`<tr><td>${esc(n)}${typicalTag(s)}</td><td class="num">${usd(v)}</td></tr>`).join('')+`<tr class="total"><td>${c.variable?'Average per rented unit':'Minimum rent per unit'}</td><td class="num">${usd(c.avg)}</td></tr>`;
  const ob=$('outB');
