@@ -420,7 +420,9 @@ const num=v=>{const x=parse(v);return isFinite(x)&&x>=0?x:0};
 const cents=x=>Math.round(x*100)/100;
 function sumRound(vals,target){ // round each value so the rounded values add up exactly to target
  const f=vals.map(v=>Math.floor(v));let r=target-f.reduce((a,b)=>a+b,0);
- vals.map((v,i)=>[v-f[i],i]).sort((a,b)=>b[0]-a[0]).forEach(([,i])=>{if(r>0){f[i]++;r--}});
+ const order=vals.map((v,i)=>[v-f[i],i]).sort((a,b)=>b[0]-a[0]);
+ order.forEach(([,i])=>{if(r>0){f[i]++;r--}});                                   // add to the largest remainders
+ order.slice().reverse().forEach(([,i])=>{if(r<0&&f[i]>0){f[i]--;r++}});          // or take from the smallest
  return f}
 const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -564,7 +566,7 @@ function calc(){
  {const two=c.units>1,simple=!ADV(),typ=s=>simple&&['sec-util','sec-repairs','sec-time','sec-vac'].includes(s);
   const k=c.share/c.rented; // whole-building amount -> per rented unit
   let h=two?`<tr class="rh"><td></td><td class="num">Building</td><td class="num">Per unit</td></tr>`:'';
-  const LS=c.lines.filter(l=>l[1]>0.004),RS=sumRound(LS.map(l=>l[1]),Math.round(c.avg)),RB=sumRound(LS.map(l=>l[3]||0),Math.round(c.total));
+  const LS=c.lines.filter(l=>l[1]>0.004),RS=sumRound(LS.map(l=>l[1]),Math.round(c.avg)),RB=sumRound(LS.map(l=>l[3]||0),costR); // same building total the equation shows
   LS.forEach(([n,v,s,w],li)=>{if(RS[li]<=0)return;
    const esc1=simple&&!DETAIL.fin&&/^Mortgage payment, with/.test(n);
    const label=esc1?'Mortgage, taxes &amp; insurance':esc(n);
