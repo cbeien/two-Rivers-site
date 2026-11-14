@@ -66,6 +66,11 @@ body:not(.has-data) .gated{display:none!important}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
 .chips button{background:var(--card);border-radius:20px;padding:8px 14px;font-size:15px}
 .chips button:hover{border-color:var(--acc);color:var(--acc)}
+.chips button[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff}
+body:not(.adv) #caseArea .adv-only{display:block!important}
+#caseArea .step{margin:12px 0 0;border:1px solid var(--acc);background:var(--card)}
+#caseArea .step h2 .n{display:none}
+.inline-close{float:right;font-size:15px}
 body.adv .simple-only{display:none!important}
 .modebar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;border-radius:10px;background:var(--soft);margin:10px 0}
 .weeds{border:2px dashed var(--acc);background:var(--soft)}
@@ -311,7 +316,7 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
   <p class="hint" style="margin:0">This estimate uses public records and typical costs. Tell us what's different about your building, and we'll work it in.</p>
   <div class="chips" id="chips">
     <button type="button" data-sec="sec-fin">My mortgage is different</button>
-    <button type="button" data-sec="sec-fin" data-f="tax">My taxes or insurance are higher</button>
+    <button type="button" data-sec="sec-fin" data-f="ins">My insurance costs more</button>
     <button type="button" data-sec="sec-loans">I have a home equity loan</button>
     <button type="button" data-sec="sec-upg">Big projects are coming</button>
     <button type="button" data-sec="sec-util">I pay more for utilities</button>
@@ -320,7 +325,8 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
     <button type="button" data-sec="sec-vac">Units sit empty longer</button>
     <button type="button" data-sec="sec-units">My units are different sizes</button>
   </div>
-  <button type="button" class="linkish" id="toAdv">Or go through every cost, one by one</button>
+  <div id="caseArea"></div>
+  <p style="margin:12px 0 0"><button type="button" class="linkish" id="toAdv">Or go through every cost, one by one</button></p>
 </section>
 
 <!-- COMPARE -->
@@ -400,7 +406,7 @@ function exText(id){const e=EXPL[id];if(e)return typeof e==='function'?e():e;con
  if(src==='typical')return 'A typical starting value for a small Chicago building. Replace it with your own number if you know it.';
  if(src==='est')return 'From the example.';return ''}
 function closeEx(id){const x=$('ex-'+id);if(x)x.classList.add('hide');const t=$('tag-'+id);if(t)t.setAttribute('aria-expanded','false')}
-let lookedUp=false, LKD=null, R=[], LOANS=[], UPG=[], UNITS=[], lookupAV=0, noSale=false, lastSimplePay=null, lastSimpleUtil=null;
+let DETAIL={fin:false,util:false,units:false}, lookedUp=false, LKD=null, R=[], LOANS=[], UPG=[], UNITS=[], lookupAV=0, noSale=false, lastSimplePay=null, lastSimpleUtil=null;
 
 /* ===== MATH ===== */
 function pmt(P,rate,yrs){const r=rate/100/12,n=yrs*12;if(P<=0||n<=0)return 0;if(r===0)return P/n;return P*r/(1-Math.pow(1+r,-n))}
@@ -418,7 +424,7 @@ function missing(){
  if(!has('units')||!(u>=1&&u<=6&&Number.isInteger(u)))m.push(['units','units in the building (1 to 6)']);
  if(!has('occ')||!Number.isInteger(o))m.push(['occ','units you live in']);
  else if(has('units')&&o>=u)m.push(['occ','units you live in (fewer than the total, so at least one is rented)']);
- if(ADV()){
+ if(ADV()||DETAIL.fin){
   if(!has('pi'))m.push(['pi','principal and interest (0 if paid off)']);
   if(!has('tax'))m.push(['tax','property taxes']);
   if(!has('ins'))m.push(['ins','insurance']);
@@ -429,10 +435,10 @@ function missing(){
  return m}
 
 function compute(){
- const units=val('units'),occ=val('occ'),rented=units-occ,share=rented/units,adv=ADV();
+ const units=val('units'),occ=val('occ'),rented=units-occ,share=rented/units,adv=ADV(),finD=adv||DETAIL.fin,utilD=adv||DETAIL.util;
  // Whole-building monthly costs, shared by every unit. [label, $/mo, section to adjust]
  const P=[];
- if(adv){P.push(['Principal and interest',val('pi'),'sec-fin'],['Property taxes',val('tax')/12,'sec-fin'],['Homeowners insurance',val('ins')/12,'sec-fin']);if(val('mi')>0)P.push(['Mortgage insurance',val('mi'),'sec-fin'])}
+ if(finD){P.push(['Principal and interest',val('pi'),'sec-fin'],['Property taxes',val('tax')/12,'sec-fin'],['Homeowners insurance',val('ins')/12,'sec-fin']);if(val('mi')>0)P.push(['Mortgage insurance',val('mi'),'sec-fin'])}
  else if(escrow())P.push(['Mortgage payment, with taxes and insurance',val('s_pay'),'']);
  else P.push(['Mortgage payment',val('s_pay'),''],['Property taxes',val('s_tax')/12,''],['Insurance',val('s_ins')/12,'']);
  if(val('hoa')>0)P.push(['HOA or condo dues',val('hoa'),'sec-fin']);
@@ -444,18 +450,18 @@ function compute(){
   [`Your pay (${val('hours')} hrs at ${usd(val('wage'))})`,val('hours')*val('wage'),'sec-time'],['Emergency, planning, legal',val('fund')+val('legal')/12,'sec-time']);
  // Utilities: simple = one total shared by all units; advanced = per utility, skip tenant-paid, shared or rented-only.
  let uAll=0,uRented=0;
- if(adv)UTIL.forEach(([id])=>{if($('tp-'+id).checked)return;const a=val(id);uAll+=a;uRented+=$('sh-'+id).value==='rented'?a:a*share});
+ if(utilD)UTIL.forEach(([id])=>{if($('tp-'+id).checked)return;const a=val(id);uAll+=a;uRented+=$('sh-'+id).value==='rented'?a:a*share});
  else{uAll=val('s_util');uRented=uAll*share}
  const sharedSum=P.reduce((a,l)=>a+l[1],0);
  const total=sharedSum+uAll, rentedCost=sharedSum*share+uRented;
  const vacF=vacFrac(),bad=val('bad')/100,loss=Math.min(0.9,vacF+bad);
  const pool=rentedCost/(1-loss), avg=pool/rented;   // all rented units together; average per unit
  const lines=P.map(([n,a,s])=>[n,a*share/rented,s]);
- lines.splice(nUtil,0,['Utilities',uRented/rented,adv?'sec-util':'']);
+ lines.splice(nUtil,0,['Utilities',uRented/rented,'sec-util']);
  lines.push(['Savings for empty months between tenants',avg*vacF,'sec-vac']);
  if(bad>0)lines.push(['Unpaid-rent cushion',avg*bad,'sec-vac']);
  // Split between units
- const method=adv?$('splitBy').value:'equal';
+ const method=(adv||DETAIL.units)?$('splitBy').value:'equal';
  let w=UNITS.slice(0,rented).map(u=>method==='beds'?Math.max(0.5,u.beds||0):method==='sqft'?(u.sqft||0):1);
  if(w.length!==rented||w.reduce((a,b)=>a+b,0)<=0)w=Array(rented).fill(1);
  const sw=w.reduce((a,b)=>a+b,0),rents=w.map(x=>pool*x/sw),variable=method!=='equal'&&rented>1&&new Set(rents.map(Math.round)).size>1;
@@ -473,6 +479,7 @@ function calc(){
  $('seniorRow').classList.toggle('hide',!(lookupAV&&$('tax').dataset.src==='lookup'&&val('occ')>=1));
  document.querySelectorAll('.mortWarn').forEach(e=>e.classList.toggle('hide',!noSale));
  document.querySelectorAll('.esc-no').forEach(e=>e.classList.toggle('hide',escrow()));
+ $('sec-mortgage-s').classList.toggle('hide',DETAIL.fin);$('sec-util-s').classList.toggle('hide',DETAIL.util);
  const own=val('occ')>=1;UTIL.forEach(([id])=>$('sh-'+id).classList.toggle('hide',!own));
  drawMortInfo();drawLinks();syncUnits();
  R.forEach((r,i)=>{const c=$('rp'+i);if(c)c.textContent=r[2]>0?usd(r[1]/r[2]/12):'—'});
@@ -621,15 +628,18 @@ function runLC(){
 
 /* ===== MODES ===== */
 // Simple -> advanced: split the one mortgage payment into parts; spread a changed utilities total across the utility rows.
-function toAdvanced(){
+function finToDetail(){
  if(has('s_pay')&&val('s_pay')!==lastSimplePay){
   if(escrow()){const p=val('s_pay');if(!has('tax'))setF('tax',TYPICAL_TAX,'typical');if(!has('ins'))setF('ins',TYPICAL_INS,'typical');
    const pi=Math.max(0,Math.round(p-val('tax')/12-val('ins')/12-val('mi')));
    setF('pi',pi,'est',`Your ${usd(p)} payment, minus the taxes and insurance below. Replace it with the principal-and-interest amount on your statement.`)}
   else{setF('pi',val('s_pay'),$('s_pay').dataset.src);setF('tax',has('s_tax')?val('s_tax'):'',$('s_tax').dataset.src);setF('ins',has('s_ins')?val('s_ins'):'',$('s_ins').dataset.src)}}
+ lastSimplePay=val('s_pay')}
+function utilToDetail(){
  if(has('s_util')&&val('s_util')!==lastSimpleUtil){const now=ownerUtil(),want=val('s_util');
   UTIL.forEach(([id])=>{if($('tp-'+id).checked)return;setF(id,now>0?Math.round(val(id)*want/now):Math.round(want/4),'est','Your utilities total from simple mode, spread across the utilities you pay. Adjust each one.')})}
  }
+function toAdvanced(){finToDetail();utilToDetail()}
 // Advanced -> simple: add the parts back into one payment.
 function toSimple(){
  if(has('pi')||has('tax')||has('ins')){const p=Math.round(val('pi')+val('tax')/12+val('ins')/12+val('mi'));
@@ -640,8 +650,26 @@ function toSimple(){
  setF('s_util',u,allTyp?'typical':'',allTyp?'Typical amounts for heat, water, common electric and garbage. Replace with what you actually pay.':null);lastSimpleUtil=u}
 function setMode(adv){
  if(adv===ADV())return;
- if(adv)toAdvanced();else toSimple();
+ closeAllInline();if(adv)toAdvanced();else{toSimple();DETAIL={fin:false,util:false,units:false}}
  document.body.classList.toggle('adv',adv);document.body.classList.add('has-data');calc()}
+
+/* ===== MAKE YOUR CASE: open one topic in place, without leaving simple mode ===== */
+const HOME={};document.querySelectorAll('section.adv-only').forEach(sec=>{const m=document.createComment(sec.id);sec.before(m);HOME[sec.id]=m});
+const isInline=id=>$(id).parentNode===$('caseArea');
+function syncChips(){document.querySelectorAll('#chips button').forEach(b=>b.setAttribute('aria-pressed',isInline(b.dataset.sec)))}
+function openInline(id,focusId){
+ const sec=$(id);
+ if(!isInline(id)){
+  if(id==='sec-fin'){finToDetail();DETAIL.fin=true}
+  if(id==='sec-util'){utilToDetail();DETAIL.util=true}
+  if(id==='sec-units')DETAIL.units=true;
+  if(!sec.querySelector('.inline-close')){const c=document.createElement('button');c.type='button';c.className='linkish inline-close';c.textContent='Close';c.onclick=()=>closeInline(id);sec.querySelector('h2').before(c)}
+  $('caseArea').append(sec)}
+ syncChips();calc();
+ const f=focusId?$(focusId):sec.querySelector('input:not([disabled]),select,button.add');
+ if(f){f.focus({preventScroll:true});const r=f.getBoundingClientRect();if(r.top<0||r.bottom>innerHeight-110)f.scrollIntoView({behavior:'smooth',block:'center'})}}
+function closeInline(id){if(isInline(id)){HOME[id].after($(id))}syncChips();calc()}
+function closeAllInline(){Object.keys(HOME).forEach(id=>{if(isInline(id))HOME[id].after($(id))});syncChips()}
 
 /* ===== RESET ===== */
 function reset(){
@@ -651,7 +679,7 @@ function reset(){
  $('esc_yes').checked=true;
  $('vac_every').value=VAC_DEFAULT.every;$('vac_gap').value=VAC_DEFAULT.gap;$('splitBy').value='equal';
  R=REPL0.map(r=>r.slice());LOANS=[];UPG=[];UNITS=[];unitsDrawn=-1;drawRepl();drawLoans();drawUpg();
- lookupAV=0;noSale=false;lastSimplePay=lastSimpleUtil=null;$('senior').checked=false;
+ closeAllInline();DETAIL={fin:false,util:false,units:false};lookupAV=0;noSale=false;lastSimplePay=lastSimpleUtil=null;$('senior').checked=false;
  ['lc_amt','lc_rate','lc_start','addr','mkt','cz_zip'].forEach(id=>$(id).value='');$('lc_term').value='30';$('lcOut').textContent='';closeLC();
  $('lmsg').innerHTML='';document.body.classList.remove('adv','manual','has-data');lookedUp=false;LKD=null;lastSimpleUtil=val('s_util');calc()}
 
@@ -671,9 +699,10 @@ $('openLC').onclick=()=>{openLC();runLC()};$('closeLC').onclick=closeLC;
 ['lc_amt','lc_rate','lc_term','lc_start'].forEach(id=>$(id).addEventListener('input',runLC));
 $('toAdv').onclick=()=>{setMode(true);$('sec-fin').scrollIntoView({behavior:'smooth',block:'start'})};
 $('manualBtn').onclick=()=>{document.body.classList.add('manual','has-data');calc();$('sec-building').scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>$('units').focus({preventScroll:true}),400)};
-$('chips').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;setMode(true);setTimeout(()=>{$(b.dataset.sec).scrollIntoView({behavior:'smooth',block:'start'});if(b.dataset.f)setTimeout(()=>$(b.dataset.f).focus({preventScroll:true}),400)},50)});
+$('chips').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const id=b.dataset.sec,sec=$(id);
+ if(isInline(id)&&sec.dataset.opener===b.innerText)closeInline(id);else{sec.dataset.opener=b.innerText;openInline(id,b.dataset.f)}});
 $('toSimple').onclick=()=>{setMode(false);window.scrollTo({top:0,behavior:'smooth'})};
-$('receipt').addEventListener('click',e=>{const b=e.target.closest('.adj');if(!b)return;setMode(true);setTimeout(()=>$(b.dataset.sec).scrollIntoView({behavior:'smooth',block:'start'}),50)});
+$('receipt').addEventListener('click',e=>{const b=e.target.closest('.adj');if(!b)return;openInline(b.dataset.sec)});
 $('reset').onclick=()=>{reset();window.scrollTo({top:0,behavior:'smooth'})};
 $('print').onclick=()=>window.print();
 // floating bar: hidden while the full result is on screen; jumps to the first missing field, or the result
