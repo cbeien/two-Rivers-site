@@ -418,6 +418,10 @@ const has=id=>String($(id).value).trim()!==''&&!isNaN(parse($(id).value));
 const val=id=>{const v=parse($(id).value);return isFinite(v)&&v>=0?v:0};
 const num=v=>{const x=parse(v);return isFinite(x)&&x>=0?x:0};
 const cents=x=>Math.round(x*100)/100;
+function sumRound(vals,target){ // round each value so the rounded values add up exactly to target
+ const f=vals.map(v=>Math.floor(v));let r=target-f.reduce((a,b)=>a+b,0);
+ vals.map((v,i)=>[v-f[i],i]).sort((a,b)=>b[0]-a[0]).forEach(([,i])=>{if(r>0){f[i]++;r--}});
+ return f}
 const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ADV=()=>document.body.classList.contains('adv');
@@ -534,6 +538,9 @@ function calc(){
   document.querySelectorAll('.urent').forEach(e=>e.textContent='—');$('unitsFoot').innerHTML='';$('unitsCheck').classList.add('hide');return}
  $('missing').classList.add('hide');$('answer').classList.remove('hide');
  const c=compute();
+ // Shown amounts: unit cells round normally (so they match the big number); the savings are rounded once,
+ // and the building's monthly cost is shown as (sum of unit amounts - savings) so the equation always adds up.
+ const amtsR=[...c.rents,...c.ownShares].map(Math.round),totR=amtsR.reduce((a,b)=>a+b,0),saveR=Math.round(c.pool-c.rentedCost),costR=totR-saveR;
  // headline
  $('oneOut').classList.toggle('hide',c.variable);$('manyOut').classList.toggle('hide',!c.variable);
  $('outA').textContent=usd(c.avg);
@@ -542,29 +549,30 @@ function calc(){
  $('outSub').textContent='per rented unit, per month';
  $('escBox').classList.add('hide');
  if(c.variable)$('manyOut').innerHTML=c.rents.map((r,i)=>`<div>${esc(UNITS[i].name)}<b>${usd(r)}</b><small>per month</small></div>`).join('');
- {const m=$('splitBy').value,amts=[...c.rents,...c.ownShares],R2=amts.map(Math.round),tot=R2.reduce((a,b)=>a+b,0);
+ {const m=$('splitBy').value,amts=[...c.rents,...c.ownShares],R2=amtsR,tot=totR;
   amts.forEach((a,i)=>{const e=$('ur'+i);if(e)e.innerHTML=i<c.rented?usd(a):`${usd(a)}<div style="font-size:12px;font-weight:400;color:var(--mute)">your housing cost</div>`;
    const g=$('ug'+i),mk=UNITS[i]&&UNITS[i].mkt;if(g)g.textContent=i<c.rented&&mk>0?(mk>a?`${usd(mk-a)} above the minimum`:'at or below the minimum'):''});
-  const mkTot=UNITS.slice(0,c.rented).reduce((a,u)=>a+(u.mkt||0),0),save=tot-Math.round(c.total);
+  const mkTot=UNITS.slice(0,c.rented).reduce((a,u)=>a+(u.mkt||0),0),save=saveR;
   $('unitsFoot').innerHTML=c.units>1?`<tr><td>Total</td><td></td><td class="num col-beds${m!=='beds'?' hide':''}"></td><td class="num col-sqft${m!=='sqft'?' hide':''}"></td><td class="num">${usd(tot)}</td><td class="num">${mkTot>0?usd(mkTot):''}</td></tr>`:'';
   const ck=$('unitsCheck');ck.classList.toggle('hide',c.units<2);
-  ck.innerHTML=`<b>&#10003; Every cost is covered.</b> `+R2.map((a,i)=>`${esc(UNITS[i]?UNITS[i].name:'Unit '+(i+1))} ${usd(a)}`).join(' + ')+` = <b>${usd(tot)}</b>. That's the building's <b>${usd(c.total)}</b> monthly cost`+(save>0?`, plus ${usd(save)} the rented units set aside for empty months${val('bad_mo')>0?' and unpaid rent':''}.`:'.')}
+  ck.innerHTML=`<b>&#10003; Every cost is covered.</b> `+R2.map((a,i)=>`${esc(UNITS[i]?UNITS[i].name:'Unit '+(i+1))} ${usd(a)}`).join(' + ')+` = <b>${usd(tot)}</b>. That's the building's <b>${usd(costR)}</b> monthly cost`+(save>0?`, plus ${usd(save)} the rented units set aside for empty months${val('bad_mo')>0?' and unpaid rent':''}.`:'.')}
  {const per=c.rentedCost/c.rented,save=c.avg-per,u=c.units;
-  $('shareLine').innerHTML=`Running this building costs <b>${usd(c.total)}</b> a month.`+(u>1?` Shared evenly by its ${u} units, that's <b>${usd(c.total/u)}</b> per unit.`:'')+
-   (Math.abs(per-c.total/u)>1?` (Utilities some units don't share make the rented units' share ${usd(per)}.)`:'')+
+  $('shareLine').innerHTML=`Running this building costs <b>${usd(costR)}</b> a month.`+(u>1&&c.method==='equal'&&Math.abs(per-c.total/u)<=1?` Shared evenly by its ${u} units, that's <b>${usd(c.total/u)}</b> per unit.`:'')+
    ` Rent only has to cover ${u>1?"a rented unit's share":'that'}, plus ${usd(save)} a month set aside for empty months${val('bad_mo')>0?' and unpaid rent':''}: <b>${usd(c.avg)}</b>.`+
    (c.occ>0?` The share for the ${plural(c.occ,'unit')} you live in is part of your own housing cost.`:'')}
  const typicalTag=s=>!ADV()&&s&&s!=='sec-fin'&&s!=='sec-loans'&&s!=='sec-upg'?` <button type="button" class="adj" data-sec="${s}">typical &middot; adjust</button>`:'';
  {const two=c.units>1,simple=!ADV(),typ=s=>simple&&['sec-util','sec-repairs','sec-time','sec-vac'].includes(s);
   const k=c.share/c.rented; // whole-building amount -> per rented unit
   let h=two?`<tr class="rh"><td></td><td class="num">Building</td><td class="num">Per unit</td></tr>`:'';
-  c.lines.filter(l=>l[1]>0.5).forEach(([n,v,s,w])=>{
+  const LS=c.lines.filter(l=>l[1]>0.004),RS=sumRound(LS.map(l=>l[1]),Math.round(c.avg)),RB=sumRound(LS.map(l=>l[3]||0),Math.round(c.total));
+  LS.forEach(([n,v,s,w],li)=>{if(RS[li]<=0)return;
    const esc1=simple&&!DETAIL.fin&&/^Mortgage payment, with/.test(n);
    const label=esc1?'Mortgage, taxes &amp; insurance':esc(n);
    const more=esc1&&LKD&&lookedUp?`<button type="button" class="more" id="escMore">${escOpen?'hide':'how?'}</button>`:'';
-   h+=`<tr${s?` class="click" data-sec="${s}"`:''}><td>${label}${more}</td>${two?`<td class="num b">${w>0.5?usd(w):''}</td>`:''}<td class="num">${usd(v)}</td></tr>`;
+   h+=`<tr${s?` class="click" data-sec="${s}"`:''}><td>${label}${more}</td>${two?`<td class="num b">${w>0.004&&RB[li]>0?usd(RB[li]):''}</td>`:''}<td class="num">${usd(RS[li])}</td></tr>`;
    if(esc1&&escOpen&&LKD){const L=LKD,parts=[[L.price?`Loan: ${usd(L.price)} sale in ${String(L.dt).replace(/^\w+ /,'')}, ${L.rt}%`:'Loan: no recent sale, assumed paid off',val('pi')],[lookupAV?'Taxes: from assessed value':'Taxes',val('tax')/12],['Insurance (typical)',val('ins')/12]];
-    parts.forEach(([pn,pw])=>h+=`<tr class="sub"><td>${esc(pn)}</td>${two?`<td class="num">${usd(pw)}</td>`:''}<td class="num">${usd(pw*k)}</td></tr>`)}});
+    const pb=sumRound(parts.map(x=>x[1]),Math.round(w)),pu=sumRound(parts.map(x=>x[1]*k),RS[li]);
+    parts.forEach(([pn],pi)=>h+=`<tr class="sub"><td>${esc(pn)}</td>${two?`<td class="num">${usd(pb[pi])}</td>`:''}<td class="num">${usd(pu[pi])}</td></tr>`)}});
   h+=`<tr class="total"><td>${c.variable?'Average per unit':'Minimum rent'}</td>${two?'<td></td>':''}<td class="num">${usd(c.avg)}</td></tr>`;
   $('receipt').innerHTML=h;
   $('rnote').classList.toggle('hide',!simple);}
