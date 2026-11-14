@@ -147,6 +147,17 @@ details.lookup summary{cursor:pointer;font-weight:600;color:var(--acc)}
 .receipt td{padding:7px 4px;border-bottom:1px dashed var(--line)}
 .receipt td.num{text-align:right;white-space:nowrap}
 .receipt tr.total td{border-top:2px solid var(--ink);border-bottom:0;font-weight:700;font-size:18px}
+.receipt tr.rh td{font-size:13px;color:var(--mute);font-weight:600;border-bottom:1px solid var(--line)}
+.receipt td.b{color:var(--mute)}
+.receipt tr.click{cursor:pointer}.receipt tr.click:hover td{background:var(--soft)}
+.receipt tr.sub td{font-size:14px;color:var(--mute);padding-left:18px;border-bottom:0}
+.receipt sup{color:var(--acc2);font-weight:700}
+.rnote{font-size:13px;color:var(--mute);margin:6px 0 0}
+.more{border:0;background:none;color:var(--acc);font-size:13px;cursor:pointer;padding:0 0 0 6px;text-decoration:underline}
+.lk.done .lk-steps,.lk.done .lk-head,.lk.done .lk-permits,.lk.done .lk-foot{display:none}
+.lk-sum{display:none;padding:10px 14px;font-size:15px}
+.lk.done .lk-sum{display:block}
+.lk-sum .w{color:var(--warn)}
 .adj{border:0;background:none;color:var(--acc);font-size:13px;text-decoration:underline;cursor:pointer;padding:0;margin-left:6px}
 .vs{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}
 .vs b{display:block;font-size:clamp(26px,5vw,40px);line-height:1.1;color:var(--acc)}
@@ -180,10 +191,10 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
 
 <section class="step hero noprint" id="hero">
   <h1 style="font-size:clamp(26px,4vw,34px);margin:0 0 8px">What's the minimum rent for a building?</h1>
-  <p class="hint" style="margin:0;font-size:16px">Type the address of a small Chicago building, yours or one nearby. Public records tell us what it sold for and what it pays in taxes. We'll show you the lowest rent that still covers every cost of owning it.</p>
+  <p class="hint" style="margin:0;font-size:16px">Type any small Chicago building, yours or a neighbor's.</p>
   <div class="line"><input id="addr" placeholder="e.g. 1234 N Example Ave" aria-label="Street address" autocomplete="street-address"><button class="pri" id="go" type="button">Show the minimum rent</button></div>
   <div id="lmsg"></div>
-  <p class="alt"><button type="button" class="linkish" id="manualBtn">No address? Enter your own numbers</button> &middot; Or try an example: <span id="samples"></span></p>
+  <p class="alt"><button type="button" class="linkish" id="manualBtn">No address? Enter your own numbers</button></p>
 </section>
 
 <div class="modebar adv-only noprint"><span><b>Advanced mode.</b> Every cost, line by line. Your answers carry over.</span><button type="button" class="linkish" id="toSimple">Back to simple</button></div>
@@ -312,16 +323,16 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
     <div id="oneOut"><div class="big" id="outA">$0</div><div id="outSub">per month, for each rented unit</div></div>
     <div id="manyOut" class="units-out hide"></div>
     <div id="escBox" class="esc-box hide"></div>
-    <p id="shareLine"></p>
+    <p id="shareLine" class="adv-only"></p>
     <table class="receipt"><tbody id="receipt"></tbody></table>
+    <p class="rnote" id="rnote"><sup style="color:var(--acc2);font-weight:700">*</sup> Typical amount. Click any line to change it.</p>
     <p id="outB" class="msg hide adv-only"></p>
   </div>
 </section>
 
 <!-- MAKE YOUR CASE -->
 <section class="step case simple-only gated noprint">
-  <h2>Think the rent should be higher? Make your case.</h2>
-  <p class="hint" style="margin:0">This estimate uses public records and typical costs. Tell us what's different about your building, and we'll work it in.</p>
+  <h2>Think it should be higher? Make your case.</h2>
   <div class="chips" id="chips">
     <button type="button" data-sec="sec-fin">My mortgage is different</button>
     <button type="button" data-sec="sec-fin" data-f="ins">My insurance costs more</button>
@@ -339,8 +350,7 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
 
 <!-- COMPARE -->
 <section class="step gated" id="compare">
-  <h2>Compare with rents nearby</h2>
-  <p class="hint">Look at a few similar apartments and type a typical rent.</p>
+  <details id="cmpD"><summary style="font-weight:700;font-size:19px;cursor:pointer">Compare with rents nearby</summary>
   <div class="row"><label for="cz_zip">ZIP code</label><div class="box"><input id="cz_zip" inputmode="numeric" maxlength="5" autocomplete="off"></div></div>
   <div class="row"><label for="cz_beds">Bedrooms</label><div class="box"><input id="cz_beds" inputmode="numeric" value="2" autocomplete="off"><span>beds</span></div></div>
   <div style="display:flex;gap:18px;flex-wrap:wrap;padding:8px 0">
@@ -351,10 +361,12 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
   <div class="links noprint" id="czLinks"></div>
   <div class="row"><label for="mkt">Typical rent nearby</label><div class="box"><span>$</span><input id="mkt" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>
   <div id="mktOut"></div>
+  </details>
 </section>
 
 <div class="actions noprint gated"><button type="button" id="print">Print / save as PDF</button><button type="button" id="reset">Start over</button></div>
 
+<p class="noprint" style="font-size:14px;color:var(--mute)">Examples for presenting: <span id="samples"></span></p>
 <details class="how"><summary><b>How this works</b></summary>
 <p>Add up what the whole building costs each month. The rented units cover their share: in a 2-flat where you live in one unit, the rented unit covers half; in a 3-flat where you live in one, the two rented units cover two thirds between them. The unit you live in carries the rest, as your own housing cost. Savings for empty months between tenants and unpaid rent are added on top.</p>
 <p>Simple mode uses typical amounts for repairs, big replacements, your pay, savings and vacancies. Advanced mode lets you set each one.</p></details>
@@ -416,7 +428,7 @@ function exText(id){const e=EXPL[id];if(e)return typeof e==='function'?e():e;con
  if(src==='typical')return 'A typical starting value for a small Chicago building. Replace it with your own number if you know it.';
  if(src==='est')return 'From the example.';return ''}
 function closeEx(id){const x=$('ex-'+id);if(x)x.classList.add('hide');const t=$('tag-'+id);if(t)t.setAttribute('aria-expanded','false')}
-let DETAIL={fin:false,util:false,units:false}, lookedUp=false, LKD=null, R=[], LOANS=[], UPG=[], UNITS=[], lookupAV=0, noSale=false, lastSimplePay=null, lastSimpleUtil=null;
+let PERMSUM='',escOpen=false,DETAIL={fin:false,util:false,units:false}, lookedUp=false, LKD=null, R=[], LOANS=[], UPG=[], UNITS=[], lookupAV=0, noSale=false, lastSimplePay=null, lastSimpleUtil=null;
 
 /* ===== MATH ===== */
 function pmt(P,rate,yrs){const r=rate/100/12,n=yrs*12;if(P<=0||n<=0)return 0;if(r===0)return P/n;return P*r/(1-Math.pow(1+r,-n))}
@@ -472,8 +484,8 @@ function compute(){
  const pool=rentedCost/(1-loss), avg=pool/rented;   // all rented units together; average per unit
  const lines=P.map(([n,a,s])=>[n,a*share/rented,s,a]); // per rented unit, plus the whole-building amount
  lines.splice(nUtil,0,['Utilities',uRented/rented,'sec-util',uAll]);
- lines.push(['Savings for empty months between tenants',avg*vacF,'sec-vac']);
- if(bad>0)lines.push(['Savings for unpaid rent',avg*bad,'sec-vac']);
+ lines.push(['Empty months between tenants',avg*vacF,'sec-vac']);
+ if(bad>0)lines.push(['Unpaid rent',avg*bad,'sec-vac']);
  // Split between units
  const method=(adv||DETAIL.units)?$('splitBy').value:'equal';
  let w=UNITS.slice(0,rented).map(u=>method==='beds'?Math.max(0.5,u.beds||0):method==='sqft'?(u.sqft||0):1);
@@ -516,8 +528,8 @@ function calc(){
  $('outA').textContent=usd(c.avg);
  const est=!ADV()&&lookedUp;
  $('resTitle').textContent=est?'The minimum rent for this building is':'Your minimum rent';
- $('outSub').textContent=est?'per rented unit, per month. That covers every cost of owning it, including pay for the owner\'s time.':'per month, for each rented unit';
- drawEsc(est);
+ $('outSub').textContent='per rented unit, per month';
+ $('escBox').classList.add('hide');
  if(c.variable)$('manyOut').innerHTML=c.rents.map((r,i)=>`<div>${esc(UNITS[i].name)}<b>${usd(r)}</b><small>per month</small></div>`).join('');
  {const n=c.rents.length,m=$('splitBy').value,R2=c.rents.map(Math.round),tot=R2.reduce((a,b)=>a+b,0);
   const mkTot=UNITS.slice(0,n).reduce((a,u)=>a+(u.mkt||0),0),save=tot-Math.round(c.rentedCost); // from rounded figures so the sentence adds up exactly
@@ -531,7 +543,19 @@ function calc(){
    ` Rent only has to cover ${u>1?"a rented unit's share":'that'}, plus ${usd(save)} a month set aside for empty months${val('bad_mo')>0?' and unpaid rent':''}: <b>${usd(c.avg)}</b>.`+
    (c.occ>0?` The share for the ${plural(c.occ,'unit')} you live in is part of your own housing cost.`:'')}
  const typicalTag=s=>!ADV()&&s&&s!=='sec-fin'&&s!=='sec-loans'&&s!=='sec-upg'?` <button type="button" class="adj" data-sec="${s}">typical &middot; adjust</button>`:'';
- $('receipt').innerHTML=`<tr><td colspan="2" style="font-size:14px;color:var(--mute);font-weight:600">Each rented unit's share, per month</td></tr>`+c.lines.filter(l=>l[1]>0.5).map(([n,v,s,w])=>`<tr><td>${esc(n)}${typicalTag(s)}${c.units>1&&w>0.5?`<small style="display:block;color:var(--mute);font-size:13px">share of ${usd(w)} for the whole building</small>`:''}</td><td class="num">${usd(v)}</td></tr>`).join('')+`<tr class="total"><td>${c.variable?'Average per rented unit':'Minimum rent per unit'}</td><td class="num">${usd(c.avg)}</td></tr>`;
+ {const two=c.units>1,simple=!ADV(),typ=s=>simple&&['sec-util','sec-repairs','sec-time','sec-vac'].includes(s);
+  const k=c.share/c.rented; // whole-building amount -> per rented unit
+  let h=two?`<tr class="rh"><td></td><td class="num">Building</td><td class="num">Per unit</td></tr>`:'';
+  c.lines.filter(l=>l[1]>0.5).forEach(([n,v,s,w])=>{
+   const esc1=simple&&!DETAIL.fin&&/^Mortgage payment, with/.test(n);
+   const label=esc1?'Mortgage, taxes &amp; insurance':esc(n);
+   const more=esc1&&LKD&&lookedUp?`<button type="button" class="more" id="escMore">${escOpen?'hide':'how?'}</button>`:'';
+   h+=`<tr${s?` class="click" data-sec="${s}"`:''}><td>${label}${typ(s)?'<sup>*</sup>':''}${more}</td>${two?`<td class="num b">${w>0.5?usd(w):''}</td>`:''}<td class="num">${usd(v)}</td></tr>`;
+   if(esc1&&escOpen&&LKD){const L=LKD,parts=[[L.price?`Loan: ${usd(L.price)} sale in ${String(L.dt).replace(/^\w+ /,'')}, ${L.rt}%`:'Loan: no recent sale, assumed paid off',val('pi')],[lookupAV?'Taxes: from assessed value':'Taxes',val('tax')/12],['Insurance (typical)',val('ins')/12]];
+    parts.forEach(([pn,pw])=>h+=`<tr class="sub"><td>${esc(pn)}</td>${two?`<td class="num">${usd(pw)}</td>`:''}<td class="num">${usd(pw*k)}</td></tr>`)}});
+  h+=`<tr class="total"><td>${c.variable?'Average per unit':'Minimum rent'}</td>${two?'<td></td>':''}<td class="num">${usd(c.avg)}</td></tr>`;
+  $('receipt').innerHTML=h;
+  $('rnote').classList.toggle('hide',!simple);}
  const ob=$('outB');
  if(c.avgB!==null){ob.classList.remove('hide');ob.innerHTML=`<b>Interest-only view: ${usd(c.avgB)} per unit${c.variable?' on average':''}.</b> Counts only the interest part of your mortgage, since the principal builds equity you keep.`}
  else{ob.classList.toggle('hide',!(ADV()&&val('pi')>0));ob.innerHTML='Add your mortgage balance and interest rate in Financing to see the interest-only view.'}
@@ -700,7 +724,7 @@ function reset(){
  $('esc_yes').checked=true;
  $('vac_every').value=VAC_DEFAULT.every;$('bad_mo').value='0';$('vac_gap').value=VAC_DEFAULT.gap;$('splitBy').value='equal';
  R=REPL0.map(r=>r.slice());LOANS=[];UPG=[];UNITS=[];unitsDrawn=-1;drawRepl();drawLoans();drawUpg();
- closeAllInline();DETAIL={fin:false,util:false,units:false};lookupAV=0;noSale=false;lastSimplePay=lastSimpleUtil=null;$('senior').checked=false;
+ closeAllInline();DETAIL={fin:false,util:false,units:false};escOpen=false;PERMSUM='';lookupAV=0;noSale=false;lastSimplePay=lastSimpleUtil=null;$('senior').checked=false;
  ['lc_amt','lc_rate','lc_start','addr','mkt','cz_zip'].forEach(id=>$(id).value='');$('lc_term').value='30';$('lcOut').textContent='';closeLC();
  $('lmsg').innerHTML='';document.body.classList.remove('adv','manual','has-data');lookedUp=false;LKD=null;lastSimpleUtil=val('s_util');calc()}
 
@@ -723,7 +747,7 @@ $('manualBtn').onclick=()=>{document.body.classList.add('manual','has-data');cal
 $('chips').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const id=b.dataset.sec,sec=$(id);
  if(isInline(id)&&sec.dataset.opener===b.innerText)closeInline(id);else{sec.dataset.opener=b.innerText;openInline(id,b.dataset.f)}});
 $('toSimple').onclick=()=>{setMode(false);window.scrollTo({top:0,behavior:'smooth'})};
-$('receipt').addEventListener('click',e=>{const b=e.target.closest('.adj');if(!b)return;openInline(b.dataset.sec)});
+$('receipt').addEventListener('click',e=>{if(e.target.id==='escMore'){escOpen=!escOpen;calc();return}const r=e.target.closest('tr.click');if(!r||ADV())return;openInline(r.dataset.sec)});
 $('reset').onclick=()=>{reset();window.scrollTo({top:0,behavior:'smooth'})};
 $('print').onclick=()=>window.print();
 // floating bar: hidden while the full result is on screen; jumps to the first missing field, or the result
@@ -751,7 +775,7 @@ const IC={pin:SV('<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 1
 const LK=[['units','Building'],['tax','Property taxes'],['mort','Mortgage'],['ins','Insurance'],['permits','Building permits']];
 function lkCard(addr,pin){$('lmsg').innerHTML=`<div class="lk"><div class="lk-head">${IC.pin}<div><b>${esc(addr)}</b><span>Cook County PIN ${pin}</span></div></div><ul class="lk-steps">`+
  LK.map(([k,t])=>`<li id="lk-${k}" class="pending"><span class="ic">${IC[k]}</span><div><b>${t}</b><span class="d">Checking county records&hellip;</span></div><span class="st" aria-hidden="true"></span></li>`).join('')+
- `</ul><div class="lk-permits hide" id="lkPermits"></div><p class="lk-foot adv-only">Numbers are filled in below. Click any <b>estimate</b> tag to see how it was worked out.</p></div>`}
+ `</ul><div class="lk-permits hide" id="lkPermits"></div><div class="lk-sum" id="lkSum"></div><p class="lk-foot adv-only">Numbers are filled in below. Click any <b>estimate</b> tag to see how it was worked out.</p></div>`}
 function lkStep(k,state,html){const li=$('lk-'+k);if(!li)return;li.className=state;li.querySelector('.d').innerHTML=html}
 /* City of Chicago building permits: by 10-digit PIN, plus by street address for older permits without one */
 async function findPermits(pin,key){
@@ -765,6 +789,7 @@ function drawPermits(list){
  const big=list.filter(p=>+p.reported_cost>=PERMIT_MIN),box=$('lkPermits');
  if(!list.length){lkStep('permits','done','No permits on file with the city.');return}
  const first=String(list[list.length-1].issue_date).slice(0,4),total=big.reduce((a,p)=>a+(+p.reported_cost),0);
+ PERMSUM=big.length?`${usd(total)} of permitted work since ${String(big[big.length-1].issue_date).slice(0,4)}`:'';
  lkStep('permits',big.length?'warn':'done',big.length?`${plural(big.length,'permit')} for big work since ${String(big[big.length-1].issue_date).slice(0,4)} &middot; ${usd(total)} reported. Was it financed?`:`${plural(list.length,'permit')} since ${first}, none for big work.`);
  if(!big.length)return;
  const short=t=>String(t||'').replace(/^PERMIT - /,'').toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());
@@ -830,6 +855,9 @@ $('go').onclick=async()=>{
  if(!has('units')){document.body.classList.add('manual');lkStep('units','warn','Unit count not on file; enter it in Your building below.')}
  if(lookupAV&&$('tax').dataset.src==='lookup'){$('tax').value=lookupTax();lkStep('tax','done',`${usd(lookupTax())}/yr &middot; estimated from the ${usd(lookupAV)} assessed value`)} // occupancy may have changed the exemption
  if(!ADV())toSimple();
+ {const L=LKD||{},card=document.querySelector('.lk');
+  if(card){$('lkSum').innerHTML=`<b>${esc(shown)}</b> &middot; ${has('units')?plural(val('units'),'unit'):'units unknown'} &middot; ${L.price?`sold ${String(L.dt).replace(/^\w+ /,'')} for ${usd(L.price)}`:'no recent sale'}${PERMSUM?` &middot; <span class="w">${PERMSUM}</span>`:''} <button type="button" class="more" id="lkMore">details</button>`;
+   card.classList.add('done');$('lkMore').onclick=()=>card.classList.remove('done')}}
  lookedUp=true;document.body.classList.add('has-data');calc();
  if(!missing().length)$('result').scrollIntoView({behavior:'smooth',block:'start'})};
 
