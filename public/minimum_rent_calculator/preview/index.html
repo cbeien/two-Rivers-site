@@ -788,13 +788,13 @@ $('go').onclick=async()=>{
  if(!hit)return lmsg('We could not find that address in Cook County records. Check the spelling, or fill in the questions yourself.');
  const pin=hit.pin,zk=Object.keys(hit).find(k=>/^prop.*zip/i.test(k)),zip=zk?String(hit[zk]).slice(0,5):'';
  const fk=Object.keys(hit).find(k=>/^prop.*full/i.test(k)),shown=fk?titleCase(hit[fk]):$('addr').value;
- const keepOcc=$('occ').value,wasAdv=ADV();reset();if(wasAdv)document.body.classList.add('adv');if(keepOcc!=='')setF('occ',keepOcc,'');
+ const keepOcc=$('occ').dataset.src===''?$('occ').value:'',wasAdv=ADV(); // keep only a number the person typed, not an earlier lookup's guessreset();if(wasAdv)document.body.classList.add('adv');if(keepOcc!=='')setF('occ',keepOcc,'');
  LKD={};$('addr').value=shown;if(zip)$('cz_zip').value=zip;
  lkCard(shown,pin);
  setF('ins',2000,'est','Insurance is not in county records. $2,000 a year is a rough placeholder for a small Chicago building; use the premium on your policy.');
  const pUnits=q(DS.chars,{pin,$order:'year DESC',$limit:'1'}).then(ch=>{
   const c=ch[0],n=c?APTS[c.char_apts]:undefined,yr=c?parseInt(c.year):'';
-  if(n&&n<=6){if(!has('occ'))setF('occ',n>1?1:0,'est',n>1?'We assumed the owner lives in one unit, as in most Chicago 2-flats. It does not change the rent per unit.':'A single home, so we assumed it is rented.');setF('units',n,'record',`Cook County Assessor building characteristics, tax year ${yr}: ${c.char_apts==='None'?'a single-family home':c.char_apts.toLowerCase()+' apartments'}, property class ${c.class}.`);lkStep('units','done',`${plural(n,'unit')} &middot; county record`)}
+  if(n&&n<=6){if(!has('occ')||val('occ')>=n)setF('occ',n>1?1:0,'est',n>1?'We assumed the owner lives in one unit, as in most Chicago 2-flats. It does not change the rent per unit.':'A single home, so we assumed it is rented.');setF('units',n,'record',`Cook County Assessor building characteristics, tax year ${yr}: ${c.char_apts==='None'?'a single-family home':c.char_apts.toLowerCase()+' apartments'}, property class ${c.class}.`);lkStep('units','done',`${plural(n,'unit')} &middot; county record`)}
   else if(n>6)lkStep('units','warn','More than 6 units; this calculator is built for 1 to 6.');
   else lkStep('units','warn','Unit count not on file; enter it below.');
  }).catch(()=>lkStep('units','warn','Could not load; enter it below.'));
