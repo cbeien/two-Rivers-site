@@ -304,7 +304,7 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
     <div id="oneOut"><div class="big" id="outA">$0</div><div id="outSub">per month, for each rented unit</div></div>
     <div id="manyOut" class="units-out hide"></div>
     <div id="escBox" class="esc-box hide"></div>
-    <p id="shareLine" class="adv-only"></p>
+    <p id="shareLine"></p>
     <table class="receipt"><tbody id="receipt"></tbody></table>
     <p id="outB" class="msg hide adv-only"></p>
   </div>
@@ -376,7 +376,7 @@ const API = 'https://datacatalog.cookcountyil.gov/resource/';
 const DS = {addr:'3723-97qp', sales:'wvhk-k5uv', values:'uzyt-m557', chars:'x54s-btds'};
 const APTS = {None:1, Two:2, Three:3, Four:4, Five:5, Six:6};
 const RATES={1990:10.13,1991:9.25,1992:8.39,1993:7.31,1994:8.38,1995:7.93,1996:7.81,1997:7.60,1998:6.94,1999:7.44,2000:8.05,2001:6.97,2002:6.54,2003:5.83,2004:5.84,2005:5.87,2006:6.41,2007:6.34,2008:6.03,2009:5.04,2010:4.69,2011:4.45,2012:3.66,2013:3.98,2014:4.17,2015:3.85,2016:3.65,2017:3.99,2018:4.54,2019:3.94,2020:3.11,2021:2.96,2022:5.34,2023:6.81,2024:6.72,2025:6.60};
-const UTIL=[['heat','Heat','',150,false],['water','Water and sewer','Chicago bills the owner for water.',120,false],['elec','Common-area electric','Hallways, basement, outdoor lights.',40,false],['garb','Garbage','',30,false],['net','Internet','',60,true]]; // id, name, hint, typical $/mo, tenant pays by default
+const UTIL=[['heat','Heat','',150,false],['water','Water and sewer','Chicago bills the owner for water.',120,false],['elec','Common-area electric','Hallways, basement, outdoor lights.',40,false],['garb','Garbage','',30,false],['net','Internet','',60,true],['uelec','Electric for each apartment','Only if the rent includes your tenants\' own electric bills. Enter the amount for one apartment.',75,true,true]]; // id, name, hint, typical $/mo, tenant pays by default, per apartment
 const TYPICAL={minor:1800,snow:300,hours:10,wage:OWNER_HOURLY_WAGE,fund:100,legal:400,bad:1};
 UTIL.forEach(u=>TYPICAL[u[0]]=u[3]);
 const VAC_DEFAULT={every:'24',gap:'1'};
@@ -414,7 +414,9 @@ function balanceAfter(P,rate,yrs,months){const r=rate/100/12,n=yrs*12;if(months>
 function lookupTax(){const ex=val('occ')>=1?HOMEOWNER_EXEMPTION+($('senior').checked?SENIOR_EXEMPTION:0):0;return Math.round(Math.max(0,lookupAV*STATE_EQUALIZER-ex)*TAX_RATE)}
 function vacFrac(){return Math.min(0.5,(+$('vac_gap').value)/(+$('vac_every').value))} // empty months per tenant cycle
 const escrow=()=>$('esc_yes').checked;
-function ownerUtil(){let a=0;UTIL.forEach(([id])=>{if(!$('tp-'+id).checked)a+=val(id)});return a}
+const perUnit=id=>!!(UTIL.find(u=>u[0]===id)||[])[5];
+const rentedCount=()=>Math.max(0,val('units')-val('occ'));
+function ownerUtil(){let a=0;UTIL.forEach(([id])=>{if(!$('tp-'+id).checked)a+=perUnit(id)?val(id)*rentedCount():val(id)});return a}
 const loanEnd=l=>(l.year||THIS_YEAR)+(l.yrs||0);
 const loanPay=l=>l.amt>0&&l.yrs>0&&loanEnd(l)>THIS_YEAR?pmt(l.amt,l.rate||0,l.yrs):0; // 0 once the loan is paid off
 function replMonthly(r){return (r||R).reduce((a,x)=>a+(x[2]>0?x[1]/x[2]:0),0)/12}
@@ -450,7 +452,9 @@ function compute(){
   [`Your pay (${val('hours')} hrs at ${usd(val('wage'))})`,val('hours')*val('wage'),'sec-time'],['Emergency, planning, legal',val('fund')+val('legal')/12,'sec-time']);
  // Utilities: simple = one total shared by all units; advanced = per utility, skip tenant-paid, shared or rented-only.
  let uAll=0,uRented=0;
- if(utilD)UTIL.forEach(([id])=>{if($('tp-'+id).checked)return;const a=val(id);uAll+=a;uRented+=$('sh-'+id).value==='rented'?a:a*share});
+ if(utilD)UTIL.forEach(([id])=>{if($('tp-'+id).checked)return;
+  if(perUnit(id)){const a=val(id)*rented;uAll+=a;uRented+=a;return} // each rented apartment's own bill, paid by the landlord
+  const a=val(id);uAll+=a;uRented+=$('sh-'+id).value==='rented'?a:a*share});
  else{uAll=val('s_util');uRented=uAll*share}
  const sharedSum=P.reduce((a,l)=>a+l[1],0);
  const total=sharedSum+uAll, rentedCost=sharedSum*share+uRented;
@@ -480,7 +484,7 @@ function calc(){
  document.querySelectorAll('.mortWarn').forEach(e=>e.classList.toggle('hide',!noSale));
  document.querySelectorAll('.esc-no').forEach(e=>e.classList.toggle('hide',escrow()));
  $('sec-mortgage-s').classList.toggle('hide',DETAIL.fin);$('sec-util-s').classList.toggle('hide',DETAIL.util);
- const own=val('occ')>=1;UTIL.forEach(([id])=>$('sh-'+id).classList.toggle('hide',!own));
+ const own=val('occ')>=1;UTIL.forEach(([id])=>$('sh-'+id).classList.toggle('hide',!own||perUnit(id)));
  drawMortInfo();drawLinks();syncUnits();
  R.forEach((r,i)=>{const c=$('rp'+i);if(c)c.textContent=r[2]>0?usd(r[1]/r[2]/12):'—'});
  LOANS.forEach((l,i)=>{const c=$('lp'+i);if(!c)return;const p=loanPay(l),end=loanEnd(l);
@@ -506,9 +510,10 @@ function calc(){
  drawEsc(est);
  if(c.variable)$('manyOut').innerHTML=c.rents.map((r,i)=>`<div>${esc(UNITS[i].name)}<b>${usd(r)}</b><small>per month</small></div>`).join('');
  c.rents.forEach((r,i)=>{const e=$('ur'+i);if(e)e.textContent=usd(r);const g=$('ug'+i),m=UNITS[i]&&UNITS[i].mkt;if(g)g.textContent=m>0?(m>r?`${usd(m-r)} above your minimum`:'at or below your minimum'):''});
- const each=c.rentedCost/c.rented,extra=c.avg-each,many=c.rented>1;
- const cover=c.occ>0?`Your ${plural(c.rented,'rented unit')} ${many?'cover':'covers'} ${usd(c.rentedCost)} of that. The other ${usd(c.total-c.rentedCost)} is your own housing cost for the ${plural(c.occ,'unit')} you live in.`:`Split across ${plural(c.rented,'rented unit')}, that's ${usd(each)} each.`;
- $('shareLine').innerHTML=`Your building costs <b>${usd(c.total)}</b> a month to run. ${cover} Add ${usd(extra)}${many?' per unit':''} to save for empty months and unpaid rent${c.variable?`, and the rented units together need <b>${usd(c.pool)}</b> a month.`:`, and you get <b>${usd(c.avg)}</b>.`}`;
+ {const many=c.rented>1,rentIn=c.avg*c.rented,own=c.total-c.rentedCost;
+  $('shareLine').innerHTML=c.occ>0
+   ?`The building costs <b>${usd(c.total)}</b> a month. Your ${plural(c.rented,'rented unit')} ${many?'bring':'brings'} in <b>${usd(rentIn)}</b>${many?` (${usd(c.avg)} each)`:''}, and your share for the ${plural(c.occ,'unit')} you live in is <b>${usd(own)}</b>, your own housing cost.`
+   :`The building costs <b>${usd(c.total)}</b> a month. Your ${plural(c.rented,'rented unit')} ${many?'bring':'brings'} in <b>${usd(rentIn)}</b> a month${many?`, ${usd(c.avg)} each`:''}.`}
  const typicalTag=s=>!ADV()&&s&&s!=='sec-fin'&&s!=='sec-loans'&&s!=='sec-upg'?` <button type="button" class="adj" data-sec="${s}">typical &middot; adjust</button>`:'';
  $('receipt').innerHTML=c.lines.filter(l=>l[1]>0.5).map(([n,v,s])=>`<tr><td>${esc(n)}${typicalTag(s)}</td><td class="num">${usd(v)}</td></tr>`).join('')+`<tr class="total"><td>${c.variable?'Average per rented unit':'Minimum rent per unit'}</td><td class="num">${usd(c.avg)}</td></tr>`;
  const ob=$('outB');
@@ -607,10 +612,10 @@ function syncUnits(){ // one row per rented unit
  $('unitsT').querySelectorAll('[data-i]').forEach(e=>e.addEventListener('input',()=>{const i=+e.dataset.i,k=e.dataset.k;UNITS[i][k]=e.dataset.t==='txt'?e.value:num(e.value);if(k==='name'&&$('manyOut'))calc();else calc()}))}
 
 /* ===== UTILITIES (advanced rows) ===== */
-$('utilRows').innerHTML=UTIL.map(([id,n,h])=>`<div class="row ut"><div><label for="${id}">${n}<button type="button" class="tag" id="tag-${id}" aria-expanded="false"></button>${h?`<small>${h}</small>`:''}</label>
+$('utilRows').innerHTML=UTIL.map(([id,n,h,,,pu])=>`<div class="row ut"><div><label for="${id}">${n}<button type="button" class="tag" id="tag-${id}" aria-expanded="false"></button>${h?`<small>${h}</small>`:''}</label>
  <div class="utc"><label class="sw"><input type="checkbox" id="tp-${id}"><span aria-hidden="true"></span>Tenant pays directly</label>
  <select id="sh-${id}" aria-label="Who shares the ${n.toLowerCase()} cost"><option value="all">Shared by all units, including yours</option><option value="rented">Rented units only</option></select></div></div>
- <div class="box"><span>$</span><input id="${id}" inputmode="decimal" autocomplete="off"><span>/mo</span></div></div>`).join('');
+ <div class="box"><span>$</span><input id="${id}" inputmode="decimal" autocomplete="off"><span>${pu?'/apt/mo':'/mo'}</span></div></div>`).join('');
 function syncUtil(){UTIL.forEach(([id])=>{const off=$('tp-'+id).checked;$(id).closest('.row').classList.toggle('off',off);$(id).disabled=off})}
 
 /* ===== LOAN CALCULATOR ===== */
@@ -636,8 +641,8 @@ function finToDetail(){
   else{setF('pi',val('s_pay'),$('s_pay').dataset.src);setF('tax',has('s_tax')?val('s_tax'):'',$('s_tax').dataset.src);setF('ins',has('s_ins')?val('s_ins'):'',$('s_ins').dataset.src)}}
  lastSimplePay=val('s_pay')}
 function utilToDetail(){
- if(has('s_util')&&val('s_util')!==lastSimpleUtil){const now=ownerUtil(),want=val('s_util');
-  UTIL.forEach(([id])=>{if($('tp-'+id).checked)return;setF(id,now>0?Math.round(val(id)*want/now):Math.round(want/4),'est','Your utilities total from simple mode, spread across the utilities you pay. Adjust each one.')})}
+ if(has('s_util')&&val('s_util')!==lastSimpleUtil){const now=UTIL.reduce((t,[id])=>t+($('tp-'+id).checked||perUnit(id)?0:val(id)),0),want=val('s_util');
+  UTIL.forEach(([id])=>{if($('tp-'+id).checked||perUnit(id))return;setF(id,now>0?Math.round(val(id)*want/now):Math.round(want/4),'est','Your utilities total from simple mode, spread across the utilities you pay. Adjust each one.')})}
  }
 function toAdvanced(){finToDetail();utilToDetail()}
 // Advanced -> simple: add the parts back into one payment.
