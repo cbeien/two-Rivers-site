@@ -96,6 +96,12 @@ details.lookup summary{cursor:pointer;font-weight:600;color:var(--acc)}
 .lk-steps li.warn .ic{color:var(--acc2)}
 .lk-steps li.done .st::after,.lk-steps li.warn .st::after{display:block;text-align:center;color:#fff;font-size:13px;font-weight:700;line-height:20px}
 .lk-steps li.done .st::after{content:"\2713"}.lk-steps li.warn .st::after{content:"!"}
+.lk-permits{padding:4px 14px 10px}
+.lk-permits table{width:100%;border-collapse:collapse;font-size:14px}
+.lk-permits td{padding:7px 4px;border-top:1px solid var(--line);vertical-align:top}
+.lk-permits td.num{text-align:right;white-space:nowrap}
+.lk-permits small{display:block;color:var(--mute)}
+.lk-permits button{font-size:13px;padding:4px 10px;white-space:nowrap}
 .lk-foot{margin:0;padding:10px 14px;border-top:1px solid var(--line);font-size:13px;color:var(--mute)}
 .lk-err{margin-top:10px;padding:12px 14px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:15px}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -376,6 +382,8 @@ function heRate(y){ // estimated home equity loan rate for the year the loan was
 const TYPICAL_TAX = 5000, TYPICAL_INS = 2000; // Used only to split an escrow payment into parts.
 const API = 'https://datacatalog.cookcountyil.gov/resource/';
 const DS = {addr:'3723-97qp', sales:'wvhk-k5uv', values:'uzyt-m557', chars:'x54s-btds'};
+const PERMITS_API = 'https://data.cityofchicago.org/resource/ydr8-5enu.json?'; // City of Chicago building permits
+const PERMIT_MIN = 5000; // list permits with at least this much reported work
 const APTS = {None:1, Two:2, Three:3, Four:4, Five:5, Six:6};
 const RATES={1990:10.13,1991:9.25,1992:8.39,1993:7.31,1994:8.38,1995:7.93,1996:7.81,1997:7.60,1998:6.94,1999:7.44,2000:8.05,2001:6.97,2002:6.54,2003:5.83,2004:5.84,2005:5.87,2006:6.41,2007:6.34,2008:6.03,2009:5.04,2010:4.69,2011:4.45,2012:3.66,2013:3.98,2014:4.17,2015:3.85,2016:3.65,2017:3.99,2018:4.54,2019:3.94,2020:3.11,2021:2.96,2022:5.34,2023:6.81,2024:6.72,2025:6.60};
 const UTIL=[['heat','Heat','',150,false],['water','Water and sewer','Chicago bills the owner for water.',120,false],['elec','Common-area electric','Hallways, basement, outdoor lights.',40,false],['garb','Garbage','',30,false],['net','Internet','',60,true],['uelec','Electric for each apartment','Only if the rent includes your tenants\' own electric bills. Enter the amount for one apartment.',75,true,true]]; // id, name, hint, typical $/mo, tenant pays by default, per apartment
@@ -737,12 +745,35 @@ const IC={pin:SV('<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 1
  units:SV('<path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/><path d="M8 10h2M14 10h2"/>'),
  tax:SV('<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/>'),
  mort:SV('<path d="M3 10l9-6 9 6"/><path d="M5 10v9M9.5 10v9M14.5 10v9M19 10v9"/><path d="M3 21h18"/>'),
- ins:SV('<path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>')};
-const LK=[['units','Building'],['tax','Property taxes'],['mort','Mortgage'],['ins','Insurance']];
+ ins:SV('<path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>'),
+ permits:SV('<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>')};
+const LK=[['units','Building'],['tax','Property taxes'],['mort','Mortgage'],['ins','Insurance'],['permits','Building permits']];
 function lkCard(addr,pin){$('lmsg').innerHTML=`<div class="lk"><div class="lk-head">${IC.pin}<div><b>${esc(addr)}</b><span>Cook County PIN ${pin}</span></div></div><ul class="lk-steps">`+
  LK.map(([k,t])=>`<li id="lk-${k}" class="pending"><span class="ic">${IC[k]}</span><div><b>${t}</b><span class="d">Checking county records&hellip;</span></div><span class="st" aria-hidden="true"></span></li>`).join('')+
- `</ul><p class="lk-foot adv-only">Numbers are filled in below. Click any <b>estimate</b> tag to see how it was worked out.</p></div>`}
+ `</ul><div class="lk-permits hide" id="lkPermits"></div><p class="lk-foot adv-only">Numbers are filled in below. Click any <b>estimate</b> tag to see how it was worked out.</p></div>`}
 function lkStep(k,state,html){const li=$('lk-'+k);if(!li)return;li.className=state;li.querySelector('.d').innerHTML=html}
+/* City of Chicago building permits: by 10-digit PIN, plus by street address for older permits without one */
+async function findPermits(pin,key){
+ const get=w=>fetch(PERMITS_API+new URLSearchParams({$select:'permit_,permit_type,issue_date,reported_cost,work_description',$where:w,$order:'issue_date DESC',$limit:'100'})).then(r=>{if(!r.ok)throw new Error(r.status);return r.json()});
+ const num=key[0],dirs=['N','S','E','W'],dir=dirs.includes(key[1])?key[1]:'',name=key.find((t,i)=>i>0&&!dirs.includes(t))||'';
+ const [a,b]=await Promise.all([get(`pin_list like '%${String(pin).slice(0,10)}%'`),
+  name?get(`street_number='${num}' AND upper(street_name) like '${name.replace(/'/g,"''")}%'`+(dir?` AND street_direction='${dir}'`:'')):Promise.resolve([])]);
+ const seen=new Set();return [...a,...b].filter(p=>{const k=p.permit_||p.issue_date+p.work_description;if(seen.has(k))return false;seen.add(k);return true})
+  .sort((x,y)=>String(y.issue_date).localeCompare(String(x.issue_date)))}
+function drawPermits(list){
+ const big=list.filter(p=>+p.reported_cost>=PERMIT_MIN),box=$('lkPermits');
+ if(!list.length){lkStep('permits','done','No permits on file with the city.');return}
+ const first=String(list[list.length-1].issue_date).slice(0,4),total=big.reduce((a,p)=>a+(+p.reported_cost),0);
+ lkStep('permits',big.length?'warn':'done',big.length?`${plural(big.length,'permit')} for big work since ${String(big[big.length-1].issue_date).slice(0,4)} &middot; ${usd(total)} reported. Was it financed?`:`${plural(list.length,'permit')} since ${first}, none for big work.`);
+ if(!big.length)return;
+ const short=t=>String(t||'').replace(/^PERMIT - /,'').toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());
+ box.innerHTML=`<table>`+big.slice(0,6).map((p,i)=>{const y=String(p.issue_date).slice(0,4),d=String(p.work_description||'').toLowerCase();
+  return `<tr><td>${y}</td><td>${esc(short(p.permit_type))}<small>${esc(d.length>110?d.slice(0,110)+'…':d)}</small></td><td class="num">${usd(+p.reported_cost)}</td><td class="num"><button type="button" data-pi="${i}">Add as a home equity loan</button></td></tr>`}).join('')+
+  `</table><p style="margin:6px 0 0;font-size:13px;color:var(--mute)">Reported costs are what the applicant told the city. Real costs are often higher.</p>`;
+ box.classList.remove('hide');
+ box.querySelectorAll('[data-pi]').forEach(btn=>btn.onclick=()=>{const p=big[+btn.dataset.pi],y=+String(p.issue_date).slice(0,4);
+  LOANS.push({name:short(p.permit_type)+' ('+y+')',amt:Math.round(+p.reported_cost),year:y,rate:heRate(y),rateAuto:true,yrs:HOME_EQUITY_YEARS});
+  drawLoans();calc();btn.textContent='Added ✓';btn.disabled=true})}
 const titleCase=t=>String(t).toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());
 $('addr').addEventListener('keydown',e=>{if(e.key==='Enter')$('go').click()});
 $('go').onclick=async()=>{
@@ -792,7 +823,8 @@ $('go').onclick=async()=>{
   lkStep('mort','done',`${usd(orig)} at ${rt}% &middot; estimated from the ${usd(price)} sale in ${yr}`);
  }).catch(()=>lkStep('mort','warn','Could not load; enter your mortgage.'));
  lkStep('ins','warn','Not in county records &middot; $2,000/yr placeholder. Use your policy.');
- await Promise.allSettled([pUnits,pTax,pSale]);
+ const pPermits=findPermits(pin,key).then(list=>drawPermits(list)).catch(()=>lkStep('permits','warn','Could not reach City of Chicago permit records.'));
+ await Promise.allSettled([pUnits,pTax,pSale,pPermits]);
  if(!has('units')){document.body.classList.add('manual');lkStep('units','warn','Unit count not on file; enter it in Your building below.')}
  if(lookupAV&&$('tax').dataset.src==='lookup'){$('tax').value=lookupTax();lkStep('tax','done',`${usd(lookupTax())}/yr &middot; estimated from the ${usd(lookupAV)} assessed value`)} // occupancy may have changed the exemption
  if(!ADV())toSimple();
