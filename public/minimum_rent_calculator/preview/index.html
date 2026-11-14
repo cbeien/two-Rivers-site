@@ -309,7 +309,7 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
   <p class="hint">Units aren't always the same. Split the rent so bigger units pay more.</p>
   <div class="row"><label for="splitBy">How to split the rent</label><select id="splitBy" class="sel"><option value="equal">Same rent for every unit</option><option value="beds">By bedrooms</option><option value="sqft">By square feet</option></select></div>
   <p id="unitsNote" class="hint hide"></p>
-  <table class="list" id="unitsTable"><thead><tr><th>Rented unit</th><th class="num col-beds">Bedrooms</th><th class="num col-sqft">Square feet</th><th class="num">Minimum rent</th><th class="num">Rent nearby (optional)</th></tr></thead><tbody id="unitsT"></tbody><tfoot id="unitsFoot"></tfoot></table>
+  <table class="list" id="unitsTable"><thead><tr><th>Unit</th><th>Who lives there</th><th class="num col-beds">Bedrooms</th><th class="num col-sqft">Square feet</th><th class="num">Monthly share</th><th class="num">Rent nearby (optional)</th></tr></thead><tbody id="unitsT"></tbody><tfoot id="unitsFoot"></tfoot></table>
   <div id="unitsCheck" class="msg hide"></div>
 </section>
 
@@ -417,6 +417,7 @@ const parse=s=>{const v=parseFloat(String(s).replace(/[$,%\s]/g,''));return isFi
 const has=id=>String($(id).value).trim()!==''&&!isNaN(parse($(id).value));
 const val=id=>{const v=parse($(id).value);return isFinite(v)&&v>=0?v:0};
 const num=v=>{const x=parse(v);return isFinite(x)&&x>=0?x:0};
+const cents=x=>Math.round(x*100)/100;
 const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ADV=()=>document.body.classList.contains('adv');
@@ -459,7 +460,15 @@ function missing(){
  return m}
 
 function compute(){
- const units=val('units'),occ=val('occ'),rented=units-occ,share=rented/units,adv=ADV(),finD=adv||DETAIL.fin,utilD=adv||DETAIL.util;
+ const units=val('units'),occ=val('occ'),rented=units-occ,adv=ADV(),finD=adv||DETAIL.fin,utilD=adv||DETAIL.util;
+ // How the building's costs are divided between units: equally, or by bedrooms / square feet.
+ // Units 1..rented are rented; the rest are the owner's. Every unit, rented or not, gets its share by the same rule.
+ const method=(adv||DETAIL.units)?$('splitBy').value:'equal';
+ const wOf=u=>method==='beds'?Math.max(0.5,(u&&u.beds)||0):method==='sqft'?((u&&u.sqft)||0):1;
+ let wAll=Array.from({length:units},(_,i)=>wOf(UNITS[i]));
+ if(wAll.some(x=>!(x>0)))wAll=Array(units).fill(1);
+ const W=wAll.reduce((a,b)=>a+b,0),wR=wAll.slice(0,rented),WR=wR.reduce((a,b)=>a+b,0);
+ const share=WR/W; // the rented units' share of costs the whole building shares
  // Whole-building monthly costs, shared by every unit. [label, $/mo, section to adjust]
  const P=[];
  if(finD){P.push(['Principal and interest',val('pi'),'sec-fin'],['Property taxes',val('tax')/12,'sec-fin'],['Homeowners insurance',val('ins')/12,'sec-fin']);if(val('mi')>0)P.push(['Mortgage insurance',val('mi'),'sec-fin'])}
@@ -473,12 +482,15 @@ function compute(){
  P.push(['Routine repairs and yard',(val('minor')+val('snow'))/12,'sec-repairs'],['Savings for big replacements',replMonthly(),'sec-repairs'],
   [`Your pay (${val('hours')} hrs at ${usd(val('wage'))})`,val('hours')*val('wage'),'sec-time'],['Emergency, planning, legal',val('fund')+val('legal')/12,'sec-time']);
  // Utilities: simple = one total shared by all units; advanced = per utility, skip tenant-paid, shared or rented-only.
- let uAll=0,uRented=0;
+ // Utilities. uShared: shared by every unit. uROnly: rented units only (split by the same rule among them). uApt: each rented apartment's own bill.
+ let uAll=0,uShared=0,uROnly=0,uApt=0;
  if(utilD)UTIL.forEach(([id])=>{if($('tp-'+id).checked)return;
-  if(perUnit(id)){const a=val(id)*rented;uAll+=a;uRented+=a;return} // each rented apartment's own bill, paid by the landlord
-  const a=val(id);uAll+=a;uRented+=$('sh-'+id).value==='rented'?a:a*share});
- else{uAll=val('s_util');uRented=uAll*share}
- const sharedSum=P.reduce((a,l)=>a+l[1],0);
+  if(perUnit(id)){uApt+=val(id)*rented;return}
+  if($('sh-'+id).value==='rented')uROnly+=val(id);else uShared+=val(id)});
+ else uShared=val('s_util');
+ uAll=uShared+uROnly+uApt;
+ const uRented=uShared*share+uROnly+uApt;
+ const sharedSum=P.reduce((a,l)=>a+l[1],0),allShared=sharedSum+uShared;
  const total=sharedSum+uAll, rentedCost=sharedSum*share+uRented;
  const vacF=vacFrac(),bad=Math.min(0.5,(+$('bad_mo').value)/(24*rented)),loss=Math.min(0.9,vacF+bad); // unpaid months over 2 years, spread across rented units
  const pool=rentedCost/(1-loss), avg=pool/rented;   // all rented units together; average per unit
@@ -486,15 +498,14 @@ function compute(){
  lines.splice(nUtil,0,['Utilities',uRented/rented,'sec-util',uAll]);
  lines.push(['Empty months between tenants',avg*vacF,'sec-vac']);
  if(bad>0)lines.push(['Unpaid rent',avg*bad,'sec-vac']);
- // Split between units
- const method=(adv||DETAIL.units)?$('splitBy').value:'equal';
- let w=UNITS.slice(0,rented).map(u=>method==='beds'?Math.max(0.5,u.beds||0):method==='sqft'?(u.sqft||0):1);
- if(w.length!==rented||w.reduce((a,b)=>a+b,0)<=0)w=Array(rented).fill(1);
- const sw=w.reduce((a,b)=>a+b,0),rents=w.map(x=>pool*x/sw),variable=method!=='equal'&&rented>1&&new Set(rents.map(Math.round)).size>1;
+ // Each unit's monthly amount. Rented: its share plus savings for empty months and unpaid rent. Owner's: its share (own housing cost).
+ const rents=wR.map(x=>(allShared*x/W+(WR>0?uROnly*x/WR:0)+uApt/rented)/(1-loss));
+ const ownShares=wAll.slice(rented).map(x=>allShared*x/W);
+ const variable=method!=='equal'&&rented>1&&new Set(rents.map(Math.round)).size>1;
  // Interest-only view (advanced): count only the interest part of the mortgage
  let avgB=null;
  if(adv&&val('pi')>0&&has('bal')&&has('rate')){const int=Math.min(val('pi'),val('bal')*val('rate')/1200);avgB=(rentedCost-(val('pi')-int)*share)/(1-loss)/rented}
- return {units,occ,rented,share,total,rentedCost,pool,avg,avgB,vacF,lines,rents,variable}}
+ return {units,occ,rented,share,total,rentedCost,pool,avg,avgB,vacF,loss,lines,rents,ownShares,variable,method,uAll}}
 
 /* ===== RENDER ===== */
 let lastA=null,lastB=null;
@@ -531,12 +542,13 @@ function calc(){
  $('outSub').textContent='per rented unit, per month';
  $('escBox').classList.add('hide');
  if(c.variable)$('manyOut').innerHTML=c.rents.map((r,i)=>`<div>${esc(UNITS[i].name)}<b>${usd(r)}</b><small>per month</small></div>`).join('');
- {const n=c.rents.length,m=$('splitBy').value,R2=c.rents.map(Math.round),tot=R2.reduce((a,b)=>a+b,0);
-  const mkTot=UNITS.slice(0,n).reduce((a,u)=>a+(u.mkt||0),0),save=tot-Math.round(c.rentedCost); // from rounded figures so the sentence adds up exactly
-  $('unitsFoot').innerHTML=n>1?`<tr><td>Total</td><td class="num col-beds${m!=='beds'?' hide':''}"></td><td class="num col-sqft${m!=='sqft'?' hide':''}"></td><td class="num" style="color:var(--acc)">${usd(tot)}</td><td class="num">${mkTot>0?usd(mkTot):''}</td></tr>`:'';
-  const ck=$('unitsCheck');ck.classList.toggle('hide',n<1);
-  ck.innerHTML=`<b>&#10003; Every cost is covered.</b> These rents add up to <b>${usd(tot)}</b> a month: the rented units' ${usd(c.rentedCost)} share of the building's costs, plus ${usd(save)} set aside for empty months${val('bad_mo')>0?' and unpaid rent':''}.`+(c.occ>0?` The share for the ${plural(c.occ,'unit')} you live in, ${usd(c.total-c.rentedCost)}, is part of your own housing cost.`:'')}
- c.rents.forEach((r,i)=>{const e=$('ur'+i);if(e)e.textContent=usd(r);const g=$('ug'+i),m=UNITS[i]&&UNITS[i].mkt;if(g)g.textContent=m>0?(m>r?`${usd(m-r)} above your minimum`:'at or below your minimum'):''});
+ {const m=$('splitBy').value,amts=[...c.rents,...c.ownShares],R2=amts.map(Math.round),tot=R2.reduce((a,b)=>a+b,0);
+  amts.forEach((a,i)=>{const e=$('ur'+i);if(e)e.innerHTML=i<c.rented?usd(a):`${usd(a)}<div style="font-size:12px;font-weight:400;color:var(--mute)">your housing cost</div>`;
+   const g=$('ug'+i),mk=UNITS[i]&&UNITS[i].mkt;if(g)g.textContent=i<c.rented&&mk>0?(mk>a?`${usd(mk-a)} above the minimum`:'at or below the minimum'):''});
+  const mkTot=UNITS.slice(0,c.rented).reduce((a,u)=>a+(u.mkt||0),0),save=tot-Math.round(c.total);
+  $('unitsFoot').innerHTML=c.units>1?`<tr><td>Total</td><td></td><td class="num col-beds${m!=='beds'?' hide':''}"></td><td class="num col-sqft${m!=='sqft'?' hide':''}"></td><td class="num">${usd(tot)}</td><td class="num">${mkTot>0?usd(mkTot):''}</td></tr>`:'';
+  const ck=$('unitsCheck');ck.classList.toggle('hide',c.units<2);
+  ck.innerHTML=`<b>&#10003; Every cost is covered.</b> `+R2.map((a,i)=>`${esc(UNITS[i]?UNITS[i].name:'Unit '+(i+1))} ${usd(a)}`).join(' + ')+` = <b>${usd(tot)}</b>. That's the building's <b>${usd(c.total)}</b> monthly cost`+(save>0?`, plus ${usd(save)} the rented units set aside for empty months${val('bad_mo')>0?' and unpaid rent':''}.`:'.')}
  {const per=c.rentedCost/c.rented,save=c.avg-per,u=c.units;
   $('shareLine').innerHTML=`Running this building costs <b>${usd(c.total)}</b> a month.`+(u>1?` Shared evenly by its ${u} units, that's <b>${usd(c.total/u)}</b> per unit.`:'')+
    (Math.abs(per-c.total/u)>1?` (Utilities some units don't share make the rented units' share ${usd(per)}.)`:'')+
@@ -634,22 +646,23 @@ function drawRepl(){const tb=$('replT'),arr=R.map(r=>({name:r[0],cost:r[1],yrs:r
  tb.innerHTML=R.map((r,i)=>`<tr><td data-l="Item"><input class="txt" data-i="${i}" data-k="0" value="${esc(r[0])}" aria-label="Item"></td><td class="num" data-l="Cost">${money(r[1],`data-i="${i}" data-k="1" aria-label="${esc(r[0])} cost"`)}</td><td class="num" data-l="Lasts"><div class="box"><input inputmode="numeric" value="${r[2]}" data-i="${i}" data-k="2" aria-label="${esc(r[0])} years it lasts"><span>yrs</span></div></td><td class="num" data-l="Per month" id="rp${i}"></td><td><button type="button" class="x" data-i="${i}" aria-label="Remove item">&times;</button></td></tr>`).join('');
  tb.querySelectorAll('[data-i]').forEach(e=>e.addEventListener('input',()=>{const i=+e.dataset.i,k=+e.dataset.k;R[i][k]=k===0?e.value:num(e.value);calc()}));
  tb.querySelectorAll('.x').forEach(b=>b.onclick=()=>{R.splice(+b.dataset.i,1);drawRepl();calc()})}
-let unitsDrawn=-1;
-function syncUnits(){ // one row per rented unit
- const u=val('units'),o=val('occ'),n=(u>=1&&u<=6&&o<u)?u-o:0;
+function syncUnits(){ // one row per unit in the building; rented units first, then the owner's
+ const u=val('units'),o=val('occ'),ok=u>=1&&u<=6&&Number.isInteger(u)&&o<u,n=ok?u:0,r=ok?u-o:0;
  while(UNITS.length<n)UNITS.push({name:`Unit ${UNITS.length+1}`,beds:2,sqft:900,mkt:0});
  const m=$('splitBy').value;
- $('unitsTable').classList.toggle('hide',n<1);
+ $('unitsTable').classList.toggle('hide',n<2);
+ $('unitsNote').classList.toggle('hide',n!==1);$('unitsNote').textContent='A single unit has nothing to split.';
  document.querySelectorAll('.col-beds').forEach(e=>e.classList.toggle('hide',m!=='beds'));
  document.querySelectorAll('.col-sqft').forEach(e=>e.classList.toggle('hide',m!=='sqft'));
- $('unitsNote').classList.toggle('hide',n!==1);$('unitsNote').textContent='Only one unit is rented, so there is nothing to split.';
- if(n===unitsDrawn&&$('unitsT').dataset.m===m)return;
- unitsDrawn=n;$('unitsT').dataset.m=m;
- $('unitsT').innerHTML=UNITS.slice(0,n).map((x,i)=>`<tr><td data-l="Rented unit"><input class="txt" data-t="txt" data-i="${i}" data-k="name" value="${esc(x.name)}" aria-label="Unit name"></td>`+
+ const key=`${n}|${r}|${m}`;if($('unitsT').dataset.key===key)return;$('unitsT').dataset.key=key;
+ $('unitsT').innerHTML=UNITS.slice(0,n).map((x,i)=>{const rent=i<r;
+  return `<tr><td data-l="Unit"><input class="txt" data-t="txt" data-i="${i}" data-k="name" value="${esc(x.name)}" aria-label="Unit name"></td>`+
+  `<td data-l="Who lives there" style="font-size:14px;color:var(--mute)">${rent?'Tenant':'You'}</td>`+
   `<td class="num col-beds${m!=='beds'?' hide':''}" data-l="Bedrooms"><div class="box"><input inputmode="numeric" value="${x.beds}" data-i="${i}" data-k="beds" aria-label="Bedrooms"><span>beds</span></div></td>`+
   `<td class="num col-sqft${m!=='sqft'?' hide':''}" data-l="Square feet"><div class="box"><input inputmode="numeric" value="${x.sqft}" data-i="${i}" data-k="sqft" aria-label="Square feet"><span>sq ft</span></div></td>`+
-  `<td class="num urent" data-l="Minimum rent" id="ur${i}" style="font-weight:700;color:var(--acc)">—</td><td class="num" data-l="Rent nearby (optional)">${money(x.mkt||'',`data-i="${i}" data-k="mkt" aria-label="Rent nearby"`)}<div class="ugap" id="ug${i}" style="font-size:13px;color:var(--mute)"></div></td></tr>`).join('');
- $('unitsT').querySelectorAll('[data-i]').forEach(e=>e.addEventListener('input',()=>{const i=+e.dataset.i,k=e.dataset.k;UNITS[i][k]=e.dataset.t==='txt'?e.value:num(e.value);if(k==='name'&&$('manyOut'))calc();else calc()}))}
+  `<td class="num urent" data-l="Monthly share" id="ur${i}" style="font-weight:700;${rent?'color:var(--acc)':''}">—</td>`+
+  `<td class="num" data-l="Rent nearby (optional)">${rent?money(x.mkt||'',`data-i="${i}" data-k="mkt" aria-label="Rent nearby"`)+`<div class="ugap" id="ug${i}" style="font-size:13px;color:var(--mute)"></div>`:''}</td></tr>`}).join('');
+ $('unitsT').querySelectorAll('[data-i]').forEach(e=>e.addEventListener('input',()=>{const i=+e.dataset.i,k=e.dataset.k;UNITS[i][k]=e.dataset.t==='txt'?e.value:num(e.value);calc()}))}
 
 /* ===== UTILITIES (advanced rows) ===== */
 $('utilRows').innerHTML=UTIL.map(([id,n,h,,,pu])=>`<div class="row ut"><div><label for="${id}">${n}<button type="button" class="tag" id="tag-${id}" aria-expanded="false"></button>${h?`<small>${h}</small>`:''}</label>
@@ -676,18 +689,21 @@ function runLC(){
 function finToDetail(){
  if(has('s_pay')&&val('s_pay')!==lastSimplePay){
   if(escrow()){const p=val('s_pay');if(!has('tax'))setF('tax',TYPICAL_TAX,'typical');if(!has('ins'))setF('ins',TYPICAL_INS,'typical');
-   const pi=Math.max(0,Math.round(p-val('tax')/12-val('ins')/12-val('mi')));
+   const pi=Math.max(0,cents(p-val('tax')/12-val('ins')/12-val('mi'))); // exact to the cent, so switching modes never moves the rent
    setF('pi',pi,'est',`Your ${usd(p)} payment, minus the taxes and insurance below. Replace it with the principal-and-interest amount on your statement.`)}
   else{setF('pi',val('s_pay'),$('s_pay').dataset.src);setF('tax',has('s_tax')?val('s_tax'):'',$('s_tax').dataset.src);setF('ins',has('s_ins')?val('s_ins'):'',$('s_ins').dataset.src)}}
  lastSimplePay=val('s_pay')}
 function utilToDetail(){
  if(has('s_util')&&val('s_util')!==lastSimpleUtil){const now=UTIL.reduce((t,[id])=>t+($('tp-'+id).checked||perUnit(id)?0:val(id)),0),want=val('s_util');
-  UTIL.forEach(([id])=>{if($('tp-'+id).checked||perUnit(id))return;setF(id,now>0?Math.round(val(id)*want/now):Math.round(want/4),'est','Your utilities total from simple mode, spread across the utilities you pay. Adjust each one.')})}
+  const ids=UTIL.map(u=>u[0]).filter(id=>!$('tp-'+id).checked&&!perUnit(id));
+  if(!ids.length){$('tp-heat').checked=false;syncUtil();ids.push('heat')} // a total but no owner-paid utility: put it on heat
+  let left=want;ids.forEach((id,i)=>{const v=i===ids.length-1?cents(left):cents(now>0?val(id)*want/now:want/ids.length);left-=v; // last one takes the remainder, so the total is exact
+   setF(id,v,'est','Your utilities total from simple mode, spread across the utilities you pay. Adjust each one.')})}
  }
 function toAdvanced(){finToDetail();utilToDetail()}
 // Advanced -> simple: add the parts back into one payment.
 function toSimple(){
- if(has('pi')||has('tax')||has('ins')){const p=Math.round(val('pi')+val('tax')/12+val('ins')/12+val('mi'));
+ if(has('pi')||has('tax')||has('ins')){const p=cents(val('pi')+val('tax')/12+val('ins')/12+val('mi'));
   const srcs=['pi','tax','ins'].map(id=>$(id).dataset.src),guess=srcs.some(s=>s&&s!=='record');
   setF('s_pay',p,guess?'est':'',guess?()=>`${usd(val('pi'))} principal and interest + ${usd(val('tax')/12)} taxes + ${usd(val('ins')/12)} insurance${val('mi')>0?` + ${usd(val('mi'))} mortgage insurance`:''}. Some of these are estimates; open advanced mode to see each one, or type your real payment here.`:null);
   $('esc_yes').checked=true;lastSimplePay=p}
@@ -723,7 +739,7 @@ function reset(){
  setF('s_util',Math.round(ownerUtil()),'typical','Typical amounts for heat, water, common electric and garbage. Replace with what you actually pay.');
  $('esc_yes').checked=true;
  $('vac_every').value=VAC_DEFAULT.every;$('bad_mo').value='0';$('vac_gap').value=VAC_DEFAULT.gap;$('splitBy').value='equal';
- R=REPL0.map(r=>r.slice());LOANS=[];UPG=[];UNITS=[];unitsDrawn=-1;drawRepl();drawLoans();drawUpg();
+ R=REPL0.map(r=>r.slice());LOANS=[];UPG=[];UNITS=[];$('unitsT').dataset.key='';drawRepl();drawLoans();drawUpg();
  closeAllInline();DETAIL={fin:false,util:false,units:false};escOpen=false;PERMSUM='';lookupAV=0;noSale=false;lastSimplePay=lastSimpleUtil=null;$('senior').checked=false;
  ['lc_amt','lc_rate','lc_start','addr','mkt','cz_zip'].forEach(id=>$(id).value='');$('lc_term').value='30';$('lcOut').textContent='';closeLC();
  $('lmsg').innerHTML='';document.body.classList.remove('adv','manual','has-data');lookedUp=false;LKD=null;lastSimpleUtil=val('s_util');calc()}
@@ -736,7 +752,7 @@ FIELDS.forEach(id=>{const row=$(id).closest('.row'),x=document.createElement('di
  $(id).addEventListener('input',()=>{$(id).dataset.src='';delete EXPL[id];closeEx(id);tag(id);if(id==='pi'||id==='s_pay')noSale=false;calc()})});
 UTIL.forEach(([id])=>['tp-','sh-'].forEach(pf=>$(pf+id).addEventListener('input',()=>{syncUtil();calc()})));
 ['esc_yes','esc_no','senior','vac_every','vac_gap','bad_mo','mkt','cz_zip','cz_beds','cz_park','cz_laundry','cz_ac'].forEach(id=>$(id).addEventListener('input',calc));
-$('splitBy').addEventListener('input',()=>{unitsDrawn=-1;calc()});
+$('splitBy').addEventListener('input',calc);
 $('addLoan').onclick=()=>{LOANS.push({name:'',amt:0,year:THIS_YEAR,rate:HOME_EQUITY_RATE,rateAuto:true,yrs:HOME_EQUITY_YEARS});drawLoans();calc();$('loansT').querySelector('tr:last-child td[data-l="Amount borrowed"] input').focus()};
 $('addUpg').onclick=()=>{UPG.push({name:'',cost:0,years:0});drawUpg();calc();$('upgT').querySelector('tr:last-child input').focus()};
 $('addRepl').onclick=()=>{R.push(['New item',0,10]);drawRepl();calc();$('replT').querySelector('tr:last-child input').select()};
