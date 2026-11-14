@@ -282,7 +282,7 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
   <div class="row"><label for="vac_every">How often do you get a new tenant?<small>On average, for each rented unit.</small></label><select id="vac_every" class="sel"><option value="12">Every year</option><option value="24">Every 2 years</option><option value="36">Every 3 years</option><option value="60">Every 5 years</option><option value="120">Rarely (about every 10 years)</option></select></div>
   <div class="row"><label for="vac_gap">How long does it take to rent between tenants?<small>Including cleanup and showings.</small></label><select id="vac_gap" class="sel"><option value="0.5">About 2 weeks</option><option value="1">About 1 month</option><option value="2">About 2 months</option><option value="3">About 3 months</option></select></div>
   <div id="vacOut" class="msg"></div>
-  <div class="row"><label for="bad">Unpaid rent<button type="button" class="tag" id="tag-bad" aria-expanded="false"></button><small>A small cushion for rent you never collect.</small></label><div class="box"><input id="bad" inputmode="decimal" autocomplete="off"><span>% of rent</span></div></div>
+  <div class="row"><label for="bad_mo">In the last 2 years, how many months of rent went unpaid?<small>Add up all your rented units. A new building? Pick None.</small></label><select id="bad_mo" class="sel"><option value="0">None</option><option value="1">1 month</option><option value="2">2 months</option><option value="3">3 months</option><option value="6">About 6 months</option><option value="12">About a year</option></select></div>
 </section>
 
 <!-- ADVANCED: RENTS BY UNIT -->
@@ -322,7 +322,7 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
     <button type="button" data-sec="sec-util">I pay more for utilities</button>
     <button type="button" data-sec="sec-repairs">My building needs more repairs</button>
     <button type="button" data-sec="sec-time">My time is worth more</button>
-    <button type="button" data-sec="sec-vac">Units sit empty longer</button>
+    <button type="button" data-sec="sec-vac">Units sit empty, or tenants don't pay</button>
     <button type="button" data-sec="sec-units">My units are different sizes</button>
   </div>
   <div id="caseArea"></div>
@@ -377,7 +377,7 @@ const DS = {addr:'3723-97qp', sales:'wvhk-k5uv', values:'uzyt-m557', chars:'x54s
 const APTS = {None:1, Two:2, Three:3, Four:4, Five:5, Six:6};
 const RATES={1990:10.13,1991:9.25,1992:8.39,1993:7.31,1994:8.38,1995:7.93,1996:7.81,1997:7.60,1998:6.94,1999:7.44,2000:8.05,2001:6.97,2002:6.54,2003:5.83,2004:5.84,2005:5.87,2006:6.41,2007:6.34,2008:6.03,2009:5.04,2010:4.69,2011:4.45,2012:3.66,2013:3.98,2014:4.17,2015:3.85,2016:3.65,2017:3.99,2018:4.54,2019:3.94,2020:3.11,2021:2.96,2022:5.34,2023:6.81,2024:6.72,2025:6.60};
 const UTIL=[['heat','Heat','',150,false],['water','Water and sewer','Chicago bills the owner for water.',120,false],['elec','Common-area electric','Hallways, basement, outdoor lights.',40,false],['garb','Garbage','',30,false],['net','Internet','',60,true],['uelec','Electric for each apartment','Only if the rent includes your tenants\' own electric bills. Enter the amount for one apartment.',75,true,true]]; // id, name, hint, typical $/mo, tenant pays by default, per apartment
-const TYPICAL={minor:1800,snow:300,hours:10,wage:OWNER_HOURLY_WAGE,fund:100,legal:400,bad:1};
+const TYPICAL={minor:1800,snow:300,hours:10,wage:OWNER_HOURLY_WAGE,fund:100,legal:400};
 UTIL.forEach(u=>TYPICAL[u[0]]=u[3]);
 const VAC_DEFAULT={every:'24',gap:'1'};
 const REPL0=[['Roof',15000,20],['Furnace / boiler',8000,20],['Water heater',1800,12],['Windows',15000,25],['Masonry / tuckpointing',12000,30],['Porches',15000,25],['Plumbing / electrical',20000,40],['Appliances',4000,12]];
@@ -386,7 +386,7 @@ const SAMPLES=[
  {n:'2-flat bought 2023',v:{units:2,occ:1,s_pay:3000}},
  {n:'3-flat, owner in one',v:{units:3,occ:1,s_pay:3500}},
  {n:'2-flat, paid off',v:{units:2,occ:1,s_pay:0,esc:'no',s_tax:4800,s_ins:1900}}];
-const FIELDS=['units','occ','s_pay','s_tax','s_ins','s_util','pi','bal','rate','tax','ins','mi','hoa',...UTIL.map(u=>u[0]),'minor','snow','hours','wage','fund','legal','bad'];
+const FIELDS=['units','occ','s_pay','s_tax','s_ins','s_util','pi','bal','rate','tax','ins','mi','hoa',...UTIL.map(u=>u[0]),'minor','snow','hours','wage','fund','legal'];
 
 /* ===== HELPERS ===== */
 const $=id=>document.getElementById(id);
@@ -458,12 +458,12 @@ function compute(){
  else{uAll=val('s_util');uRented=uAll*share}
  const sharedSum=P.reduce((a,l)=>a+l[1],0);
  const total=sharedSum+uAll, rentedCost=sharedSum*share+uRented;
- const vacF=vacFrac(),bad=val('bad')/100,loss=Math.min(0.9,vacF+bad);
+ const vacF=vacFrac(),bad=Math.min(0.5,(+$('bad_mo').value)/(24*rented)),loss=Math.min(0.9,vacF+bad); // unpaid months over 2 years, spread across rented units
  const pool=rentedCost/(1-loss), avg=pool/rented;   // all rented units together; average per unit
  const lines=P.map(([n,a,s])=>[n,a*share/rented,s]);
  lines.splice(nUtil,0,['Utilities',uRented/rented,'sec-util']);
  lines.push(['Savings for empty months between tenants',avg*vacF,'sec-vac']);
- if(bad>0)lines.push(['Unpaid-rent cushion',avg*bad,'sec-vac']);
+ if(bad>0)lines.push(['Savings for unpaid rent',avg*bad,'sec-vac']);
  // Split between units
  const method=(adv||DETAIL.units)?$('splitBy').value:'equal';
  let w=UNITS.slice(0,rented).map(u=>method==='beds'?Math.max(0.5,u.beds||0):method==='sqft'?(u.sqft||0):1);
@@ -682,7 +682,7 @@ function reset(){
  UTIL.forEach(([id,,,,tp])=>{$('tp-'+id).checked=tp;$('sh-'+id).value='all'});syncUtil();
  setF('s_util',Math.round(ownerUtil()),'typical','Typical amounts for heat, water, common electric and garbage. Replace with what you actually pay.');
  $('esc_yes').checked=true;
- $('vac_every').value=VAC_DEFAULT.every;$('vac_gap').value=VAC_DEFAULT.gap;$('splitBy').value='equal';
+ $('vac_every').value=VAC_DEFAULT.every;$('bad_mo').value='0';$('vac_gap').value=VAC_DEFAULT.gap;$('splitBy').value='equal';
  R=REPL0.map(r=>r.slice());LOANS=[];UPG=[];UNITS=[];unitsDrawn=-1;drawRepl();drawLoans();drawUpg();
  closeAllInline();DETAIL={fin:false,util:false,units:false};lookupAV=0;noSale=false;lastSimplePay=lastSimpleUtil=null;$('senior').checked=false;
  ['lc_amt','lc_rate','lc_start','addr','mkt','cz_zip'].forEach(id=>$(id).value='');$('lc_term').value='30';$('lcOut').textContent='';closeLC();
@@ -695,7 +695,7 @@ FIELDS.forEach(id=>{const row=$(id).closest('.row'),x=document.createElement('di
   const open=x.classList.contains('hide');if(open){x.innerHTML=exText(id);x.classList.remove('hide')}else x.classList.add('hide');$('tag-'+id).setAttribute('aria-expanded',open)});
  $(id).addEventListener('input',()=>{$(id).dataset.src='';delete EXPL[id];closeEx(id);tag(id);if(id==='pi'||id==='s_pay')noSale=false;calc()})});
 UTIL.forEach(([id])=>['tp-','sh-'].forEach(pf=>$(pf+id).addEventListener('input',()=>{syncUtil();calc()})));
-['esc_yes','esc_no','senior','vac_every','vac_gap','mkt','cz_zip','cz_beds','cz_park','cz_laundry','cz_ac'].forEach(id=>$(id).addEventListener('input',calc));
+['esc_yes','esc_no','senior','vac_every','vac_gap','bad_mo','mkt','cz_zip','cz_beds','cz_park','cz_laundry','cz_ac'].forEach(id=>$(id).addEventListener('input',calc));
 $('splitBy').addEventListener('input',()=>{unitsDrawn=-1;calc()});
 $('addLoan').onclick=()=>{LOANS.push({name:'',amt:0,year:THIS_YEAR,rate:HOME_EQUITY_RATE,rateAuto:true,yrs:HOME_EQUITY_YEARS});drawLoans();calc();$('loansT').querySelector('tr:last-child td[data-l="Amount borrowed"] input').focus()};
 $('addUpg').onclick=()=>{UPG.push({name:'',cost:0,years:0});drawUpg();calc();$('upgT').querySelector('tr:last-child input').focus()};
