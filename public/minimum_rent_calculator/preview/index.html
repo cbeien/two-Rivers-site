@@ -179,9 +179,9 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
 
 
 <section class="step hero noprint" id="hero">
-  <h1 style="font-size:clamp(26px,4vw,34px);margin:0 0 8px">What could rent be?</h1>
-  <p class="hint" style="margin:0;font-size:16px">Type the address of a small Chicago building, yours or one nearby. Public records tell us what it sold for and what it pays in taxes. We'll show you the rent that covers every cost of owning it.</p>
-  <div class="line"><input id="addr" placeholder="e.g. 1234 N Example Ave" aria-label="Street address" autocomplete="street-address"><button class="pri" id="go" type="button">Show me the rent</button></div>
+  <h1 style="font-size:clamp(26px,4vw,34px);margin:0 0 8px">What's the minimum rent for a building?</h1>
+  <p class="hint" style="margin:0;font-size:16px">Type the address of a small Chicago building, yours or one nearby. Public records tell us what it sold for and what it pays in taxes. We'll show you the lowest rent that still covers every cost of owning it.</p>
+  <div class="line"><input id="addr" placeholder="e.g. 1234 N Example Ave" aria-label="Street address" autocomplete="street-address"><button class="pri" id="go" type="button">Show the minimum rent</button></div>
   <div id="lmsg"></div>
   <p class="alt"><button type="button" class="linkish" id="manualBtn">No address? Enter your own numbers</button> &middot; Or try an example: <span id="samples"></span></p>
 </section>
@@ -515,20 +515,21 @@ function calc(){
  $('oneOut').classList.toggle('hide',c.variable);$('manyOut').classList.toggle('hide',!c.variable);
  $('outA').textContent=usd(c.avg);
  const est=!ADV()&&lookedUp;
- $('resTitle').textContent=est?'Rent could be':'Your minimum rent';
- $('outSub').textContent=est?'per unit, per month, and still cover every cost of owning this building.':'per month, for each rented unit';
+ $('resTitle').textContent=est?'The minimum rent for this building is':'Your minimum rent';
+ $('outSub').textContent=est?'per rented unit, per month. That covers every cost of owning it, including pay for the owner\'s time.':'per month, for each rented unit';
  drawEsc(est);
  if(c.variable)$('manyOut').innerHTML=c.rents.map((r,i)=>`<div>${esc(UNITS[i].name)}<b>${usd(r)}</b><small>per month</small></div>`).join('');
  {const n=c.rents.length,m=$('splitBy').value,R2=c.rents.map(Math.round),tot=R2.reduce((a,b)=>a+b,0);
   const mkTot=UNITS.slice(0,n).reduce((a,u)=>a+(u.mkt||0),0),save=tot-Math.round(c.rentedCost); // from rounded figures so the sentence adds up exactly
   $('unitsFoot').innerHTML=n>1?`<tr><td>Total</td><td class="num col-beds${m!=='beds'?' hide':''}"></td><td class="num col-sqft${m!=='sqft'?' hide':''}"></td><td class="num" style="color:var(--acc)">${usd(tot)}</td><td class="num">${mkTot>0?usd(mkTot):''}</td></tr>`:'';
   const ck=$('unitsCheck');ck.classList.toggle('hide',n<1);
-  ck.innerHTML=`<b>&#10003; Every cost is covered.</b> Together your rented units bring in <b>${usd(tot)}</b> a month: their ${usd(c.rentedCost)} share of the building's costs, plus ${usd(save)} saved for empty months and unpaid rent.`+(c.occ>0?` Your own unit${c.occ>1?'s':''} cover${c.occ>1?'':'s'} the other ${usd(c.total-c.rentedCost)}.`:'')}
+  ck.innerHTML=`<b>&#10003; Every cost is covered.</b> These rents add up to <b>${usd(tot)}</b> a month: the rented units' ${usd(c.rentedCost)} share of the building's costs, plus ${usd(save)} set aside for empty months${val('bad_mo')>0?' and unpaid rent':''}.`+(c.occ>0?` The share for the ${plural(c.occ,'unit')} you live in, ${usd(c.total-c.rentedCost)}, is part of your own housing cost.`:'')}
  c.rents.forEach((r,i)=>{const e=$('ur'+i);if(e)e.textContent=usd(r);const g=$('ug'+i),m=UNITS[i]&&UNITS[i].mkt;if(g)g.textContent=m>0?(m>r?`${usd(m-r)} above your minimum`:'at or below your minimum'):''});
- {const many=c.rented>1,rentIn=c.avg*c.rented,own=c.total-c.rentedCost;
-  $('shareLine').innerHTML=c.occ>0
-   ?`The building costs <b>${usd(c.total)}</b> a month. Your ${plural(c.rented,'rented unit')} ${many?'bring':'brings'} in <b>${usd(rentIn)}</b>${many?` (${usd(c.avg)} each)`:''}, which includes savings for empty months between tenants. Your share for the ${plural(c.occ,'unit')} you live in is <b>${usd(own)}</b>, your own housing cost.`
-   :`The building costs <b>${usd(c.total)}</b> a month. Your ${plural(c.rented,'rented unit')} ${many?'bring':'brings'} in <b>${usd(rentIn)}</b> a month${many?`, ${usd(c.avg)} each`:''}, which includes savings for empty months between tenants.`}
+ {const per=c.rentedCost/c.rented,save=c.avg-per,u=c.units;
+  $('shareLine').innerHTML=`Running this building costs <b>${usd(c.total)}</b> a month.`+(u>1?` Shared evenly by its ${u} units, that's <b>${usd(c.total/u)}</b> per unit.`:'')+
+   (Math.abs(per-c.total/u)>1?` (Utilities some units don't share make the rented units' share ${usd(per)}.)`:'')+
+   ` Rent only has to cover ${u>1?"a rented unit's share":'that'}, plus ${usd(save)} a month set aside for empty months${val('bad_mo')>0?' and unpaid rent':''}: <b>${usd(c.avg)}</b>.`+
+   (c.occ>0?` The share for the ${plural(c.occ,'unit')} you live in is part of your own housing cost.`:'')}
  const typicalTag=s=>!ADV()&&s&&s!=='sec-fin'&&s!=='sec-loans'&&s!=='sec-upg'?` <button type="button" class="adj" data-sec="${s}">typical &middot; adjust</button>`:'';
  $('receipt').innerHTML=c.lines.filter(l=>l[1]>0.5).map(([n,v,s])=>`<tr><td>${esc(n)}${typicalTag(s)}</td><td class="num">${usd(v)}</td></tr>`).join('')+`<tr class="total"><td>${c.variable?'Average per rented unit':'Minimum rent per unit'}</td><td class="num">${usd(c.avg)}</td></tr>`;
  const ob=$('outB');
@@ -788,7 +789,8 @@ $('go').onclick=async()=>{
  if(!hit)return lmsg('We could not find that address in Cook County records. Check the spelling, or fill in the questions yourself.');
  const pin=hit.pin,zk=Object.keys(hit).find(k=>/^prop.*zip/i.test(k)),zip=zk?String(hit[zk]).slice(0,5):'';
  const fk=Object.keys(hit).find(k=>/^prop.*full/i.test(k)),shown=fk?titleCase(hit[fk]):$('addr').value;
- const keepOcc=$('occ').dataset.src===''?$('occ').value:'',wasAdv=ADV(); // keep only a number the person typed, not an earlier lookup's guessreset();if(wasAdv)document.body.classList.add('adv');if(keepOcc!=='')setF('occ',keepOcc,'');
+ // keep only a number the person typed, not an earlier lookup's guess
+ const keepOcc=$('occ').dataset.src===''?$('occ').value:'',wasAdv=ADV();reset();if(wasAdv)document.body.classList.add('adv');if(keepOcc!=='')setF('occ',keepOcc,'');
  LKD={};$('addr').value=shown;if(zip)$('cz_zip').value=zip;
  lkCard(shown,pin);
  setF('ins',2000,'est','Insurance is not in county records. $2,000 a year is a rough placeholder for a small Chicago building; use the premium on your policy.');
