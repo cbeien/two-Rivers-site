@@ -325,7 +325,7 @@ footer{color:var(--mute);font-size:14px;margin-top:24px}
     <div id="escBox" class="esc-box hide"></div>
     <p id="shareLine" class="adv-only"></p>
     <table class="receipt"><tbody id="receipt"></tbody></table>
-    <p class="rnote" id="rnote"><sup style="color:var(--acc2);font-weight:700">*</sup> Typical amount. Click any line to change it.</p>
+    <p class="rnote" id="rnote">Click any line to change it.</p>
     <p id="outB" class="msg hide adv-only"></p>
   </div>
 </section>
@@ -550,7 +550,7 @@ function calc(){
    const esc1=simple&&!DETAIL.fin&&/^Mortgage payment, with/.test(n);
    const label=esc1?'Mortgage, taxes &amp; insurance':esc(n);
    const more=esc1&&LKD&&lookedUp?`<button type="button" class="more" id="escMore">${escOpen?'hide':'how?'}</button>`:'';
-   h+=`<tr${s?` class="click" data-sec="${s}"`:''}><td>${label}${typ(s)?'<sup>*</sup>':''}${more}</td>${two?`<td class="num b">${w>0.5?usd(w):''}</td>`:''}<td class="num">${usd(v)}</td></tr>`;
+   h+=`<tr${s?` class="click" data-sec="${s}"`:''}><td>${label}${more}</td>${two?`<td class="num b">${w>0.5?usd(w):''}</td>`:''}<td class="num">${usd(v)}</td></tr>`;
    if(esc1&&escOpen&&LKD){const L=LKD,parts=[[L.price?`Loan: ${usd(L.price)} sale in ${String(L.dt).replace(/^\w+ /,'')}, ${L.rt}%`:'Loan: no recent sale, assumed paid off',val('pi')],[lookupAV?'Taxes: from assessed value':'Taxes',val('tax')/12],['Insurance (typical)',val('ins')/12]];
     parts.forEach(([pn,pw])=>h+=`<tr class="sub"><td>${esc(pn)}</td>${two?`<td class="num">${usd(pw)}</td>`:''}<td class="num">${usd(pw*k)}</td></tr>`)}});
   h+=`<tr class="total"><td>${c.variable?'Average per unit':'Minimum rent'}</td>${two?'<td></td>':''}<td class="num">${usd(c.avg)}</td></tr>`;
